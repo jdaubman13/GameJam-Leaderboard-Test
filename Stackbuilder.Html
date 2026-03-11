@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stack Builder — Consecutive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a1a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    overflow-y: auto;
+    user-select: none;
+    padding-bottom: 40px;
+  }
+
+  #gameWrapper {
+    position: relative;
+    width: 420px;
+    height: 700px;
+    flex-shrink: 0;
+  }
+
+  canvas {
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 0 60px rgba(0,255,200,0.15), 0 0 120px rgba(0,100,255,0.1);
+  }
+
+  #ui {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  #hud {
+    position: absolute;
+    top: 14px; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0 18px;
+  }
+
+  .hud-block {
+    text-align: center;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-width: 80px;
+  }
+
+  .hud-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .hud-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 12px currentColor;
+  }
+
+  #streakDisplay {
+    position: absolute;
+    top: 90px; left: 50%; transform: translateX(-50%);
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  #streakNum {
+    font-family: 'Orbitron', monospace;
+    font-size: 48px;
+    font-weight: 900;
+    color: #00ffcc;
+    text-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc88;
+    line-height: 1;
+    transition: all 0.15s;
+  }
+
+  #streakLabel {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+
+  #multiplierBadge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b00, #ff0080);
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  #screen-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(5, 5, 20, 0.92);
+    border-radius: 8px;
+    transition: opacity 0.4s;
+    pointer-events: all;
+  }
+
+  #screen-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .screen-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #00ffcc;
+    text-shadow: 0 0 30px #00ffcc;
+    margin-bottom: 6px;
+  }
+
+  .screen-sub {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 32px;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 28px;
+  }
+
+  .stat-box {
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .stat-lbl {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 2px;
+  }
+
+  .play-btn {
+    background: linear-gradient(135deg, #00ffcc22, #0080ff22);
+    border: 1.5px solid #00ffcc;
+    color: #00ffcc;
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 14px 40px;
+    border-radius: 4px;
+    cursor: pointer;
+    pointer-events: all;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    box-shadow: 0 0 20px #00ffcc44;
+  }
+
+  .play-btn:hover {
+    background: linear-gradient(135deg, #00ffcc44, #0080ff44);
+    box-shadow: 0 0 40px #00ffcc88;
+    transform: translateY(-2px);
+  }
+
+  .milestone-toast {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    color: #ffcc00;
+    text-shadow: 0 0 30px #ffcc00;
+    letter-spacing: 3px;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  #windIndicator {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  #windIndicator.visible { opacity: 1; }
+
+  .wind-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .wind-arrow {
+    font-size: 14px;
+    color: #88ccff;
+    text-shadow: 0 0 8px #88ccff;
+    transition: transform 0.3s;
+  }
+
+  #heightMarker {
+    position: absolute;
+    right: 22px;
+    bottom: 50px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+  }
+
+  @keyframes bannerSlide {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+
+  /* ── Streak unlock pop-up modal ── */
+  #streakModal {
+    display: none;
+    position: fixed; inset: 0;
+    z-index: 500;
+    align-items: center; justify-content: center;
+    background: rgba(5,5,15,0.88);
+    backdrop-filter: blur(8px);
+    animation: modalFadeIn .35s ease-out;
+  }
+  #streakModal.show { display: flex; }
+  .modal-box {
+    position: relative;
+    background: linear-gradient(160deg, #0d0d22, #05050a);
+    border: 2px solid #39ff14;
+    border-radius: 10px;
+    padding: 44px 48px 40px;
+    text-align: center;
+    max-width: 380px; width: 88%;
+    box-shadow: 0 0 60px rgba(57,255,20,0.35), 0 0 120px rgba(57,255,20,0.12);
+    animation: modalPop .42s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .modal-icon {
+    font-size: 52px; margin-bottom: 10px;
+    animation: iconBounce .5s ease-out;
+  }
+  .modal-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem; font-weight: 900;
+    letter-spacing: .12em;
+    color: #39ff14;
+    text-shadow: 0 0 20px #39ff14, 0 0 40px rgba(57,255,20,0.5);
+    margin-bottom: 4px; line-height: 1.2;
+  }
+  .modal-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .68rem; letter-spacing: .25em;
+    color: rgba(255,255,255,.35); margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  .modal-stat {
+    display: inline-block;
+    background: rgba(57,255,20,0.08);
+    border: 1px solid rgba(57,255,20,0.25);
+    border-radius: 4px; padding: 7px 18px; margin-bottom: 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem; letter-spacing: .1em;
+    color: #ffe600; text-shadow: 0 0 10px #ffe600;
+  }
+  .modal-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(57,255,20,0.3), transparent);
+    margin-bottom: 20px;
+  }
+  .modal-question {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .68rem; letter-spacing: .2em;
+    color: rgba(255,255,255,.3); margin-bottom: 14px; text-transform: uppercase;
+  }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .modal-btn-arcade {
+    font-family: 'Orbitron', monospace; font-size: .85rem; font-weight: 700;
+    letter-spacing: .12em; padding: .65rem 1.6rem;
+    background: #39ff14; color: #05050a;
+    border: none; border-radius: 4px; cursor: pointer;
+    box-shadow: 0 0 24px rgba(57,255,20,0.5), 4px 4px 0 rgba(0,0,0,0.4);
+    transition: all .15s;
+  }
+  .modal-btn-arcade:hover {
+    transform: translate(-2px,-2px);
+    box-shadow: 0 0 40px rgba(57,255,20,0.8), 6px 6px 0 rgba(0,0,0,0.4);
+  }
+  .modal-btn-stay {
+    font-family: 'Orbitron', monospace; font-size: .85rem; font-weight: 700;
+    letter-spacing: .12em; padding: .65rem 1.6rem;
+    background: transparent; color: rgba(255,255,255,.35);
+    border: 2px solid rgba(255,255,255,.15); border-radius: 4px; cursor: pointer;
+    transition: all .15s;
+  }
+  .modal-btn-stay:hover { color: #00ffcc; border-color: #00ffcc; box-shadow: 0 0 14px rgba(0,255,200,.3); }
+  .modal-spark {
+    position: absolute; width: 5px; height: 5px; border-radius: 50%;
+    pointer-events: none; animation: sparkFloat 2s ease-in-out infinite;
+  }
+  @keyframes modalFadeIn { from { opacity: 0; }                    to { opacity: 1; } }
+  @keyframes modalPop    { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes iconBounce  { from { transform: scale(0.4) rotate(-15deg); } to { transform: scale(1) rotate(0deg); } }
+  @keyframes sparkFloat  {
+    0%,100% { transform: translate(0,0) scale(1);              opacity: 1; }
+    50%     { transform: translate(var(--sx),var(--sy)) scale(1.5); opacity: 0.5; }
+  }
+
+  /* ══════════════════════════════════════════════
+     LEADERBOARD STYLES (new)
+  ══════════════════════════════════════════════ */
+  #leaderboardSection {
+    width: 420px;
+    margin-top: 24px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Score submission panel */
+  .lb-submit-panel {
+    background: rgba(0,255,200,0.06);
+    border: 1px solid rgba(0,255,200,0.25);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: none; /* shown after game over */
+  }
+  .lb-submit-panel.visible { display: block; }
+
+  .lb-submit-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #00ffcc;
+    text-shadow: 0 0 8px #00ffcc;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .lb-score-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .lb-score-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .lb-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .lb-username-input {
+    flex: 1;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,200,0.35);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #00ffcc;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    outline: none;
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+  }
+  .lb-username-input::placeholder { color: rgba(0,255,200,0.3); }
+  .lb-username-input:focus { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,200,0.2); }
+
+  .lb-submit-btn {
+    background: #00ffcc;
+    color: #05050a;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .lb-submit-btn:hover { background: #00ffaa; box-shadow: 0 0 20px rgba(0,255,200,0.5); }
+  .lb-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .lb-submit-status {
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-top: 8px;
+    min-height: 14px;
+    text-align: center;
+  }
+  .lb-submit-status.ok    { color: #39ff14; }
+  .lb-submit-status.error { color: #f52a7c; }
+
+  /* Leaderboard table */
+  .lb-panel {
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(0,255,200,0.18);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .lb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0,255,200,0.07);
+    border-bottom: 1px solid rgba(0,255,200,0.15);
+  }
+
+  .lb-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: #00ffcc;
+    text-shadow: 0 0 10px #00ffcc;
+    text-transform: uppercase;
+  }
+
+  .lb-refresh-btn {
+    background: transparent;
+    border: 1px solid rgba(0,255,200,0.3);
+    border-radius: 3px;
+    color: rgba(0,255,200,0.5);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .lb-refresh-btn:hover { color: #00ffcc; border-color: #00ffcc; }
+
+  .lb-table { width: 100%; }
+
+  .lb-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 8px;
+    padding: 9px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row:hover { background: rgba(255,255,255,0.03); }
+  .lb-row.lb-col-header {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.25);
+    padding-top: 10px;
+    background: transparent;
+  }
+
+  .lb-rank {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .lb-rank.gold   { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
+  .lb-rank.silver { color: #c0c0c0; text-shadow: 0 0 8px #c0c0c0; }
+  .lb-rank.bronze { color: #cd7f32; text-shadow: 0 0 8px #cd7f32; }
+  .lb-rank.normal { color: rgba(255,255,255,0.45); }
+
+  .lb-name {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.8);
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .lb-name.highlight { color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,200,0.4); }
+
+  .lb-score-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    text-align: right;
+  }
+
+  .lb-empty {
+    padding: 24px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.2);
+  }
+
+  .lb-loading {
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(0,255,200,0.4);
+    animation: lbBlink 1s step-end infinite;
+  }
+  @keyframes lbBlink { 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     GAME SECTION (unchanged)
+═══════════════════════════════════════════ -->
+<div style="display:flex; flex-direction:column; align-items:center; padding-top:20px;">
+
+<div id="gameWrapper">
+  <canvas id="c" width="420" height="700"></canvas>
+
+  <div id="ui">
+    <div id="hud">
+      <div class="hud-block">
+        <div class="hud-label">Score</div>
+        <div class="hud-value" id="scoreVal">0</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">Height</div>
+        <div class="hud-value" id="heightVal">0</div>
+      </div>
+      <div class="hud-block">
+        <div class="hud-label">Best</div>
+        <div class="hud-value" id="bestVal">0</div>
+      </div>
+    </div>
+
+    <div id="streakDisplay">
+      <div id="streakNum">0</div>
+      <div id="streakLabel">CONSECUTIVE</div>
+      <div id="multiplierBadge">×1</div>
+    </div>
+
+    <div id="windIndicator">
+      <span class="wind-label">WIND</span>
+      <span class="wind-arrow" id="windArrow">→</span>
+      <span class="wind-label" id="windStrength">—</span>
+    </div>
+
+    <div id="heightMarker"></div>
+
+    <div class="milestone-toast" id="toast"></div>
+
+    <div id="unlockBanner" style="display:none; position:absolute; top:0; left:0; right:0; background:linear-gradient(90deg,rgba(57,255,20,0.18),rgba(0,245,255,0.12),rgba(57,255,20,0.18)); border-bottom:1px solid rgba(57,255,20,0.4); padding:10px; text-align:center; font-family:'Orbitron',monospace; font-size:11px; letter-spacing:3px; color:#39ff14; text-shadow:0 0 12px #39ff14; z-index:50; animation:bannerSlide .4s ease-out;">⚡ STAGE 2 UNLOCKED — PIANO TILES READY ⚡</div>
+
+    <div id="screen-overlay">
+      <a href="index.html" onclick="event.preventDefault(); goToArcadeWithUnlock();" style="position:absolute; top:18px; left:18px; font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.25); text-decoration:none; border:1px solid rgba(255,255,255,0.1); border-radius:3px; padding:4px 10px; transition:all .2s;" onmouseover="this.style.color='#00ffcc';this.style.borderColor='#00ffcc';" onmouseout="this.style.color='rgba(255,255,255,0.25)';this.style.borderColor='rgba(255,255,255,0.1)';">← ARCADE</a>
+      <div class="screen-title" id="overlayTitle">STACK BUILDER</div>
+      <div class="screen-sub" id="overlaySub">HIT 15 STREAK → UNLOCK PIANO TILES</div>
+      <div class="stat-row" id="statRow" style="display:none">
+        <div class="stat-box">
+          <div class="stat-val" id="finalScore">0</div>
+          <div class="stat-lbl">SCORE</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="finalStreak">0</div>
+          <div class="stat-lbl">BEST STREAK</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="finalHeight">0</div>
+          <div class="stat-lbl">HEIGHT</div>
+        </div>
+      </div>
+      <div id="unlockBadge" style="display:none; background:linear-gradient(135deg,rgba(57,255,20,0.15),rgba(0,245,255,0.1)); border:1.5px solid #39ff14; border-radius:4px; padding:8px 20px; margin-bottom:12px; font-family:'Share Tech Mono',monospace; font-size:12px; letter-spacing:2px; color:#39ff14; text-shadow:0 0 10px #39ff14;">✅ STAGE 2 UNLOCKED — HEAD BACK TO ARCADE!</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <button class="play-btn" id="playBtn">▶ PLAY</button>
+        <button class="play-btn" id="arcadeBtn" style="background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02)); border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.4); display:none;">← ARCADE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LEADERBOARD SECTION (new)
+═══════════════════════════════════════════ -->
+<div id="leaderboardSection">
+
+  <!-- Score submission form — shown after game over -->
+  <div class="lb-submit-panel" id="lbSubmitPanel">
+    <div class="lb-submit-title">📊 Submit Your Score</div>
+    <div class="lb-score-display" id="lbScoreDisplay">0</div>
+    <div class="lb-score-label">HIGHEST STACK</div>
+    <div class="lb-input-row">
+      <input
+        class="lb-username-input"
+        id="lbUsernameInput"
+        type="text"
+        maxlength="12"
+        placeholder="YOUR NAME"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="lb-submit-btn" id="lbSubmitBtn">SUBMIT</button>
+    </div>
+    <div class="lb-submit-status" id="lbSubmitStatus"></div>
+  </div>
+
+  <!-- Leaderboard table -->
+  <div class="lb-panel">
+    <div class="lb-header">
+      <div class="lb-title">🏆 Highest Stack</div>
+      <button class="lb-refresh-btn" id="lbRefreshBtn">↻ REFRESH</button>
+    </div>
+    <div id="lbTableContainer">
+      <div class="lb-loading">LOADING...</div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end flex column -->
+
+<!-- ── Streak unlock pop-up ── -->
+<div id="streakModal">
+  <div class="modal-box" id="modalBox">
+    <div class="modal-icon">🏗️</div>
+    <div class="modal-title">UNLOCKED!</div>
+    <div class="modal-sub">Stage 2 — Piano Tiles Unlocked</div>
+    <div class="modal-stat" id="modalStreakStat">15 STREAK</div>
+    <div class="modal-divider"></div>
+    <div class="modal-question">What do you want to do?</div>
+    <div class="modal-btns">
+      <button class="modal-btn-arcade" id="modalArcadeBtn">⚡ BACK TO ARCADE</button>
+      <button class="modal-btn-stay"   id="modalStayBtn">KEEP STACKING</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FIREBASE SDK (new) — Leaderboard backend
+     Project: groupjam-arcade (free Spark plan)
+═══════════════════════════════════════════ -->
+<script type="module">
+  /* ─────────────────────────────────────────────────────────────────
+     LEADERBOARD MODULE
+     Uses Firebase Firestore (free Spark tier).
+     Collection: "leaderboard_stack"
+     Documents auto-id, fields: { username, score, timestamp }
+  ───────────────────────────────────────────────────────────────── */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, query,
+    orderBy, limit, getDocs, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+  // ── Firebase config ── REPLACE with your own project values ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyAFE1i-ziXh1Z9FRVOgI_8EG-set2Oy2vA",
+    authDomain: "groupjam-arcade.firebaseapp.com",
+    projectId: "groupjam-arcade",
+    storageBucket: "groupjam-arcade.firebasestorage.app",
+    messagingSenderId: "633215767657",
+    appId: "1:633215767657:web:6617a23a5a32850ca93ef8"
+};
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const COLLECTION = "leaderboard_stack";  // Firestore collection name
+  const TOP_N      = 10;                   // number of entries to show
+
+  /* Fetch top-N scores and render the table */
+  async function loadLeaderboard() {
+    const container = document.getElementById('lbTableContainer');
+    container.innerHTML = '<div class="lb-loading">LOADING...</div>';
+    try {
+      const q = query(
+        collection(db, COLLECTION),
+        orderBy("score", "desc"),
+        limit(TOP_N)
+      );
+      const snap = await getDocs(q);
+      renderTable(snap.docs.map(d => d.data()));
+    } catch (e) {
+      container.innerHTML = '<div class="lb-empty">Could not load leaderboard.</div>';
+      console.error("Leaderboard load error:", e);
+    }
+  }
+
+  /* Render an array of { username, score } into the table */
+  function renderTable(rows) {
+    const container = document.getElementById('lbTableContainer');
+    if (!rows.length) {
+      container.innerHTML = '<div class="lb-empty">NO SCORES YET — BE THE FIRST!</div>';
+      return;
+    }
+    const rankClasses = ['gold','silver','bronze'];
+    const rankSymbols = ['①','②','③'];
+    let html = `
+      <div class="lb-row lb-col-header">
+        <span>RANK</span><span>PLAYER</span><span>HEIGHT</span>
+      </div>`;
+    rows.forEach((row, i) => {
+      const rClass = rankClasses[i] || 'normal';
+      const rLabel = i < 3 ? rankSymbols[i] : `#${i+1}`;
+      // Highlight the row if it matches last submitted name (stored in window)
+      const nameClass = (row.username === window._lbLastSubmittedName) ? ' highlight' : '';
+      html += `
+        <div class="lb-row">
+          <span class="lb-rank ${rClass}">${rLabel}</span>
+          <span class="lb-name${nameClass}">${sanitize(row.username)}</span>
+          <span class="lb-score-val">${row.score}</span>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  /* Simple XSS guard */
+  function sanitize(str) {
+    return String(str).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* Submit a score to Firestore */
+  async function submitScore(username, score) {
+    await addDoc(collection(db, COLLECTION), {
+      username: username.trim().toUpperCase().slice(0, 12),
+      score,
+      timestamp: serverTimestamp()
+    });
+  }
+
+  /* ── Wire up UI ── */
+  document.getElementById('lbRefreshBtn').addEventListener('click', loadLeaderboard);
+
+  document.getElementById('lbSubmitBtn').addEventListener('click', async () => {
+    const input  = document.getElementById('lbUsernameInput');
+    const status = document.getElementById('lbSubmitStatus');
+    const btn    = document.getElementById('lbSubmitBtn');
+    const name   = input.value.trim();
+    if (!name) { status.textContent = 'ENTER A USERNAME FIRST'; status.className = 'lb-submit-status error'; return; }
+
+    // Score is set by the game via window._lbPendingScore
+    const score = window._lbPendingScore || 0;
+    btn.disabled = true;
+    status.textContent = 'SUBMITTING...';
+    status.className   = 'lb-submit-status';
+    try {
+      await submitScore(name, score);
+      window._lbLastSubmittedName = name.toUpperCase().slice(0, 12);
+      status.textContent = '✓ SCORE SUBMITTED!';
+      status.className   = 'lb-submit-status ok';
+      btn.textContent    = '✓ DONE';
+      input.disabled     = true;
+      await loadLeaderboard(); // refresh table immediately
+    } catch (e) {
+      status.textContent = 'SUBMIT FAILED — CHECK CONNECTION';
+      status.className   = 'lb-submit-status error';
+      btn.disabled = false;
+      console.error("Submit error:", e);
+    }
+  });
+
+  /* Expose leaderboard loader globally so game code can call it */
+  window.lbLoad  = loadLeaderboard;
+  window.lbShow  = function(score) {
+    // Show the submit panel with the player's height score
+    window._lbPendingScore = score;
+    const panel = document.getElementById('lbSubmitPanel');
+    const input = document.getElementById('lbUsernameInput');
+    const btn   = document.getElementById('lbSubmitBtn');
+    const status = document.getElementById('lbSubmitStatus');
+    document.getElementById('lbScoreDisplay').textContent = score;
+    panel.classList.add('visible');
+    input.disabled  = false;
+    btn.disabled    = false;
+    btn.textContent = 'SUBMIT';
+    status.textContent = '';
+    // Scroll leaderboard into view
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 400);
+  };
+
+  // Load on page init
+  loadLeaderboard();
+</script>
+
+<!-- ═══════════════════════════════════════════
+     GAME SCRIPT (original — only triggerGameOver patched)
+═══════════════════════════════════════════ -->
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const scoreVal = document.getElementById('scoreVal');
+const heightVal = document.getElementById('heightVal');
+const bestVal = document.getElementById('bestVal');
+const streakNum = document.getElementById('streakNum');
+const multiplierBadge = document.getElementById('multiplierBadge');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlaySub = document.getElementById('overlaySub');
+const screenOverlay = document.getElementById('screen-overlay');
+const statRow = document.getElementById('statRow');
+const finalScore = document.getElementById('finalScore');
+const finalStreak = document.getElementById('finalStreak');
+const finalHeight = document.getElementById('finalHeight');
+const playBtn = document.getElementById('playBtn');
+const toast = document.getElementById('toast');
+const windIndicator = document.getElementById('windIndicator');
+const windArrow = document.getElementById('windArrow');
+const windStrength = document.getElementById('windStrength');
+
+const BLOCK_COLORS = [
+  ['#00ffcc','#00cc99'],['#0088ff','#0055cc'],['#ff6b00','#cc4400'],
+  ['#ff0080','#cc0055'],['#aaff00','#77cc00'],['#ff44ff','#cc00cc'],
+  ['#ffcc00','#cc9900'],['#00ccff','#0099cc']
+];
+
+const STREAK_REQUIRED = 15;
+const STAGE_NUMBER    = 1;
+
+let state = 'title';
+let blocks = [];
+let movingBlock = null;
+let score = 0, streak = 0, bestStreak = 0, bestScore = 0;
+let multiplier = 1;
+let towerHeight = 0;
+let wind = 0, windTarget = 0;
+let difficulty = 0;
+let screenShake = 0;
+let particles = [];
+let clouds = [];
+let cityBuildings = [];
+let frameCount = 0;
+let colorIndex = 0;
+let physicsAccum = 0;
+let lastPlacedWidth = 140;
+let unlockFired = false;
+const FIXED_DT = 1/60;
+
+const GRAVITY = 0.5;
+const FRICTION = 0.85;
+const ANG_FRICTION = 0.88;
+const BLOCK_H = 28;
+const BASE_BLOCK_W = 140;
+const MIN_BLOCK_W = 18;
+
+function initScene() {
+  clouds = Array.from({length:6}, (_,i) => ({
+    x: Math.random()*W, y: 40+Math.random()*120,
+    w: 60+Math.random()*80, h: 20+Math.random()*20,
+    speed: 0.2+Math.random()*0.3
+  }));
+  cityBuildings = [];
+  let cx = 0;
+  while(cx < W+40) {
+    const bw = 18+Math.random()*40;
+    const bh = 40+Math.random()*160;
+    cityBuildings.push({x:cx, w:bw, h:bh});
+    cx += bw + 2+Math.random()*6;
+  }
+}
+
+function newGame() {
+  blocks = [];
+  particles = [];
+  score = 0; streak = 0; multiplier = 1;
+  towerHeight = 0; difficulty = 0;
+  wind = 0; windTarget = 0;
+  frameCount = 0; colorIndex = 0;
+  screenShake = 0;
+  lastPlacedWidth = BASE_BLOCK_W;
+  unlockFired = false;
+  // Hide leaderboard submit panel on new game
+  document.getElementById('lbSubmitPanel').classList.remove('visible');
+  blocks.push(makePlatform());
+  spawnMovingBlock();
+  updateHUD();
+  screenOverlay.classList.add('hidden');
+  state = 'playing';
+}
+
+function makePlatform() {
+  return {
+    x: W/2 - 70, y: H - 60,
+    w: 140, h: BLOCK_H,
+    color: BLOCK_COLORS[0],
+    vx:0, vy:0, ax:0, ay:0,
+    angle:0, angVel:0,
+    locked: true
+  };
+}
+
+function getStackTopY() {
+  if (!blocks.length) return H - 60;
+  return Math.min(...blocks.map(b => b.y));
+}
+
+function spawnMovingBlock() {
+  colorIndex = (colorIndex+1) % BLOCK_COLORS.length;
+  const w = Math.max(MIN_BLOCK_W, lastPlacedWidth);
+  const baseSpeed = 2.2 + difficulty * 7.0;
+  const speed = baseSpeed * (Math.random() < 0.5 ? 1 : -1);
+  movingBlock = {
+    x: speed > 0 ? -w : W,
+    y: getStackTopY() - BLOCK_H - 10,
+    w, h: BLOCK_H,
+    vx: speed, vy: 0,
+    color: BLOCK_COLORS[colorIndex],
+    angle: 0, angVel: 0,
+    dropped: false, landing: false,
+    landTimer: 0
+  };
+}
+
+function dropBlock() {
+  if (!movingBlock || movingBlock.dropped || state !== 'playing') return;
+  movingBlock.dropped = true;
+  movingBlock.vy = 1;
+  movingBlock.vx *= 0.1;
+}
+
+function physicsStep() {
+  if (!movingBlock) return;
+
+  if (movingBlock.dropped) {
+    movingBlock.vy += GRAVITY;
+    movingBlock.vx += wind * 0.04;
+    movingBlock.x += movingBlock.vx;
+    movingBlock.y += movingBlock.vy;
+    movingBlock.angle += movingBlock.angVel;
+    movingBlock.angVel *= ANG_FRICTION;
+
+    const topBlock = getTopBlock();
+    if (topBlock) {
+      const blockBottom = movingBlock.y + movingBlock.h;
+      const stackTop = topBlock.y;
+      if (blockBottom >= stackTop && movingBlock.y < stackTop && movingBlock.vy > 0) {
+        landBlock(topBlock);
+        return;
+      }
+    }
+
+    if (movingBlock.y > H + 50) {
+      triggerGameOver();
+    }
+  } else {
+    movingBlock.x += movingBlock.vx;
+    if (movingBlock.x < -movingBlock.w) movingBlock.x = W + 5;
+    if (movingBlock.x > W + 5) movingBlock.x = -movingBlock.w;
+  }
+
+  if (difficulty > 0.12) {
+    blocks.forEach((b, i) => {
+      if (b.locked) return;
+      b.angVel += (Math.random()-0.5) * difficulty * 0.025;
+      b.angVel *= ANG_FRICTION;
+      b.angle += b.angVel;
+      if (Math.abs(b.angle) > 0.6) { b.angle *= 0.9; b.angVel *= -0.3; }
+      b.vx += wind * 0.005;
+      b.vx *= 0.92;
+      b.x += b.vx;
+    });
+  }
+}
+
+function getTopBlock() {
+  if (!blocks.length) return null;
+  return blocks.reduce((a,b) => a.y < b.y ? a : b);
+}
+
+function landBlock(topBlock) {
+  const mb = movingBlock;
+  mb.y = topBlock.y - mb.h;
+  mb.vy = 0; mb.vx = 0;
+
+  const overlapLeft  = Math.max(mb.x, topBlock.x);
+  const overlapRight = Math.min(mb.x + mb.w, topBlock.x + topBlock.w);
+  const overlap = overlapRight - overlapLeft;
+  const minOverlap = mb.w * 0.30;
+
+  if (overlap < minOverlap) {
+    triggerGameOver();
+    return;
+  }
+
+  const trimRatio = overlap / mb.w;
+  mb.x = overlapLeft;
+  mb.w = overlap;
+  mb.angle = 0; mb.angVel = 0;
+  mb.vx = 0; mb.vy = 0;
+  mb.locked = false;
+  lastPlacedWidth = mb.w;
+
+  blocks.push({...mb});
+  towerHeight = blocks.length - 1;
+
+  streak++;
+  if (streak > bestStreak) bestStreak = streak;
+  multiplier = 1 + Math.floor(streak / 5);
+  const pts = Math.round(100 * multiplier * (trimRatio * 0.5 + 0.5));
+  score += pts;
+  if (score > bestScore) bestScore = score;
+
+  difficulty = Math.min(1, towerHeight * 0.028);
+
+  if (towerHeight >= 3 && towerHeight % 4 === 0) {
+    windTarget = (Math.random()-0.5) * difficulty * 6;
+  }
+  wind += (windTarget - wind) * 0.08;
+
+  const spawnDelay = Math.max(80, 300 - difficulty * 220);
+
+  spawnParticles(mb.x + mb.w/2, mb.y, mb.color[0], streak % 10 === 0 ? 30 : 12);
+
+  if (streak % 10 === 0) screenShake = 8;
+
+  if (streak >= STREAK_REQUIRED && !unlockFired) {
+    unlockFired = true;
+    sessionStorage.setItem('gj_unlocked', '2');
+    playUnlockFanfare();
+    showUnlockModal(streak);
+  }
+
+  if ([10,25,50,100].includes(streak)) showToast(`🔥 ${streak} STREAK!`);
+
+  movingBlock = null;
+  updateHUD();
+  scrollCamera();
+  setTimeout(spawnMovingBlock, spawnDelay);
+}
+
+let cameraY = 0;
+let cameraTween = 0;
+
+function scrollCamera() {
+  const topY = getStackTopY();
+  const targetCam = Math.max(0, (H/2 - 100) - topY);
+  cameraTween = targetCam;
+}
+
+/* ── PATCHED: triggerGameOver now also calls lbShow with towerHeight ── */
+function triggerGameOver() {
+  state = 'dead';
+  movingBlock = null;
+  screenShake = 16;
+  setTimeout(() => {
+    overlayTitle.textContent = 'GAME OVER';
+    overlaySub.textContent = streak >= STREAK_REQUIRED ? '🎉 STAGE 2 UNLOCKED!' : streak > 0 ? `${streak} STREAK` : 'NO STREAK';
+    statRow.style.display = 'flex';
+    finalScore.textContent = score;
+    finalStreak.textContent = streak;
+    finalHeight.textContent = towerHeight;
+    playBtn.textContent = '↺ RETRY';
+
+    const arcadeBtn = document.getElementById('arcadeBtn');
+    const unlockBadge = document.getElementById('unlockBadge');
+    if (arcadeBtn) {
+      arcadeBtn.style.display = 'inline-block';
+      if (unlockFired || bestStreak >= STREAK_REQUIRED) {
+        unlockBadge.style.display = 'block';
+        arcadeBtn.style.borderColor = '#39ff14';
+        arcadeBtn.style.color = '#39ff14';
+        arcadeBtn.style.textShadow = '0 0 10px #39ff14';
+        arcadeBtn.textContent = '⚡ BACK TO ARCADE →';
+      }
+    }
+
+    screenOverlay.classList.remove('hidden');
+
+    // ── NEW: show leaderboard submit panel with towerHeight as the score ──
+    if (window.lbShow) window.lbShow(towerHeight);
+  }, 600);
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i=0; i<count; i++) {
+    const angle = Math.random()*Math.PI*2;
+    const speed = 1.5+Math.random()*3;
+    particles.push({
+      x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed - 2,
+      color, size: 2+Math.random()*4,
+      life: 1, decay: 0.02+Math.random()*0.03
+    });
+  }
+}
+
+function updateParticles() {
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.12; p.vx *= 0.96;
+    p.life -= p.decay;
+    p.size *= 0.97;
+  });
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translate(-50%, -50%) scale(1.2)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translate(-50%, -50%) scale(0.8)';
+  }, 1200);
+}
+
+function updateHUD() {
+  scoreVal.textContent = score;
+  heightVal.textContent = towerHeight;
+  bestVal.textContent = bestScore;
+  streakNum.textContent = streak;
+  streakNum.style.color = streak >= 25 ? '#ffcc00' : streak >= 10 ? '#ff6b00' : '#00ffcc';
+  streakNum.style.textShadow = `0 0 20px ${streakNum.style.color}, 0 0 40px ${streakNum.style.color}88`;
+  if (multiplier > 1) {
+    multiplierBadge.textContent = `×${multiplier}`;
+    multiplierBadge.style.opacity = '1';
+  } else {
+    multiplierBadge.style.opacity = '0';
+  }
+  if (Math.abs(wind) > 0.2) {
+    windIndicator.classList.add('visible');
+    windArrow.textContent = wind > 0 ? '→' : '←';
+    const bars = Math.ceil(Math.abs(wind)/1.5);
+    windStrength.textContent = '█'.repeat(Math.min(bars,4));
+  } else {
+    windIndicator.classList.remove('visible');
+  }
+}
+
+function drawBackground() {
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0, '#0a0a2e');
+  sky.addColorStop(0.6, '#0d1540');
+  sky.addColorStop(1, '#1a0a30');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  for (let i=0; i<60; i++) {
+    const sx = (i*137.5)%W;
+    const sy = (i*97.3)%300;
+    const ss = (Math.sin(frameCount*0.02+i)*0.5+0.5)*1.5;
+    ctx.beginPath();
+    ctx.arc(sx, sy, ss, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  const camOffset = cameraY;
+  ctx.fillStyle = '#0e1625';
+  cityBuildings.forEach(b => {
+    ctx.fillRect(b.x, H - b.h + camOffset, b.w, b.h);
+  });
+
+  cityBuildings.forEach(b => {
+    for (let wy = H - b.h + camOffset + 8; wy < H - 10; wy += 14) {
+      for (let wx = b.x + 4; wx < b.x + b.w - 4; wx += 8) {
+        const lit = Math.sin(wx*3.7+wy*1.9+frameCount*0.01)>0.3;
+        if (lit) {
+          ctx.fillStyle = 'rgba(255,220,80,0.35)';
+          ctx.fillRect(wx, wy, 4, 6);
+        }
+      }
+    }
+  });
+
+  clouds.forEach(cl => {
+    cl.x += cl.speed;
+    if (cl.x > W + cl.w) cl.x = -cl.w;
+    const clY = cl.y + camOffset * 0.15;
+    ctx.fillStyle = 'rgba(100,130,200,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(cl.x, clY, cl.w/2, cl.h/2, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cl.x-cl.w*0.3, clY+4, cl.w*0.3, cl.h*0.35, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cl.x+cl.w*0.25, clY+6, cl.w*0.28, cl.h*0.3, 0, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function drawBlock(b, alpha=1) {
+  ctx.save();
+  const cx = b.x + b.w/2, cy = b.y + b.h/2;
+  ctx.translate(cx + cameraY*0, cy + cameraY);
+  ctx.rotate(b.angle || 0);
+  ctx.globalAlpha = alpha;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(-b.w/2+4, -b.h/2+4, b.w, b.h);
+
+  const grad = ctx.createLinearGradient(-b.w/2, -b.h/2, b.w/2, b.h/2);
+  grad.addColorStop(0, b.color[0]);
+  grad.addColorStop(1, b.color[1]);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(-b.w/2, -b.h/2, b.w, b.h, 4);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.beginPath();
+  ctx.roundRect(-b.w/2+2, -b.h/2+2, b.w-4, b.h/3, 3);
+  ctx.fill();
+
+  if (streak >= 10 && !b.locked) {
+    const glow = streak >= 25 ? '#ffcc00' : '#ff6b00';
+    ctx.strokeStyle = glow;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.4 + Math.sin(frameCount*0.15)*0.2;
+    ctx.beginPath();
+    ctx.roundRect(-b.w/2, -b.h/2, b.w, b.h, 4);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawMovingBlock() {
+  if (!movingBlock) return;
+  const mb = movingBlock;
+  ctx.save();
+  const cx = mb.x + mb.w/2, cy = mb.y + mb.h/2;
+  const camOff = mb.dropped ? cameraY : 0;
+  ctx.translate(cx, cy + camOff);
+  ctx.rotate(mb.angle || 0);
+
+  if (!mb.dropped) {
+    ctx.setLineDash([4,6]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, mb.h/2);
+    ctx.lineTo(0, H - cy - camOff);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(-mb.w/2+3, -mb.h/2+3, mb.w, mb.h);
+
+  const grad = ctx.createLinearGradient(-mb.w/2, 0, mb.w/2, 0);
+  grad.addColorStop(0, mb.color[0]);
+  grad.addColorStop(1, mb.color[1]);
+  ctx.fillStyle = grad;
+  ctx.globalAlpha = mb.dropped ? 1 : (0.8 + Math.sin(frameCount*0.2)*0.1);
+  ctx.beginPath();
+  ctx.roundRect(-mb.w/2, -mb.h/2, mb.w, mb.h, 4);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath();
+  ctx.roundRect(-mb.w/2+2, -mb.h/2+2, mb.w-4, mb.h/3, 3);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life * 0.9;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y + cameraY, p.size, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawGroundLine() {
+  ctx.strokeStyle = 'rgba(0,255,200,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, H - 40 + cameraY);
+  ctx.lineTo(W, H - 40 + cameraY);
+  ctx.stroke();
+}
+
+let lastTime = 0;
+
+function loop(ts) {
+  const dt = Math.min((ts - lastTime)/1000, 0.05);
+  lastTime = ts;
+  frameCount++;
+
+  cameraY += (cameraTween - cameraY) * 0.06;
+  wind += (windTarget - wind) * 0.02;
+
+  if (screenShake > 0) {
+    screenShake *= 0.85;
+    if (screenShake < 0.3) screenShake = 0;
+  }
+
+  if (state === 'playing') {
+    physicsAccum += dt;
+    while (physicsAccum >= FIXED_DT) {
+      physicsStep();
+      physicsAccum -= FIXED_DT;
+    }
+    updateParticles();
+  }
+
+  ctx.save();
+  if (screenShake > 0) {
+    ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+  }
+
+  drawBackground();
+  drawGroundLine();
+
+  blocks.forEach((b,i) => {
+    const instability = Math.abs(b.angle) / 0.6;
+    drawBlock(b, 1);
+    if (instability > 0.3 && !b.locked) {
+      ctx.save();
+      ctx.globalAlpha = instability * 0.3;
+      ctx.fillStyle = '#ff3300';
+      ctx.fillRect(b.x, b.y + cameraY, b.w, b.h);
+      ctx.restore();
+    }
+  });
+
+  drawMovingBlock();
+  drawParticles();
+
+  ctx.restore();
+
+  requestAnimationFrame(loop);
+}
+
+function handleInput() {
+  if (state === 'playing') dropBlock();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowDown' || e.code === 'Enter') {
+    e.preventDefault();
+    handleInput();
+  }
+});
+canvas.addEventListener('pointerdown', e => { e.preventDefault(); handleInput(); });
+document.getElementById('gameWrapper').addEventListener('pointerdown', e => { handleInput(); });
+
+playBtn.addEventListener('click', () => {
+  overlayTitle.textContent = 'STACK BUILDER';
+  overlaySub.textContent = 'CONSECUTIVE ARCADE';
+  statRow.style.display = 'none';
+  playBtn.textContent = '▶ PLAY';
+  const arcadeBtn = document.getElementById('arcadeBtn');
+  const unlockBadge = document.getElementById('unlockBadge');
+  if (arcadeBtn) { arcadeBtn.style.display = 'none'; arcadeBtn.style.borderColor = ''; arcadeBtn.style.color = ''; arcadeBtn.textContent = '← ARCADE'; }
+  if (unlockBadge) unlockBadge.style.display = 'none';
+  newGame();
+});
+
+document.getElementById('arcadeBtn').addEventListener('click', () => {
+  goToArcadeWithUnlock();
+});
+
+function goToArcadeWithUnlock() {
+  const level = sessionStorage.getItem('gj_unlocked') || '1';
+  window.location.href = 'index.html?unlocked=' + level;
+}
+
+function playUnlockFanfare() {
+  try {
+    const uc = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.12, 0.24].forEach((delay, i) => {
+      const o = uc.createOscillator(), g = uc.createGain();
+      o.connect(g); g.connect(uc.destination);
+      o.type = 'sine';
+      o.frequency.setValueAtTime([880, 1100, 1320][i], uc.currentTime + delay);
+      g.gain.setValueAtTime(.15, uc.currentTime + delay);
+      g.gain.exponentialRampToValueAtTime(.001, uc.currentTime + delay + .2);
+      o.start(uc.currentTime + delay); o.stop(uc.currentTime + delay + .22);
+    });
+  } catch(e) {}
+}
+
+function showUnlockModal(streakCount) {
+  const modal = document.getElementById('streakModal');
+  const stat  = document.getElementById('modalStreakStat');
+  const box   = document.getElementById('modalBox');
+  if (!modal) return;
+
+  stat.textContent = streakCount + ' STREAK';
+  modal.classList.add('show');
+
+  const sparkColors = ['#39ff14','#00ffcc','#ffe600','#ff2d78','#fff'];
+  for (let i = 0; i < 14; i++) {
+    const sp = document.createElement('div');
+    sp.className = 'modal-spark';
+    const angle = (i / 14) * Math.PI * 2;
+    const r = 150 + Math.random() * 70;
+    sp.style.cssText = `
+      left: calc(50% + ${Math.cos(angle) * r}px);
+      top:  calc(50% + ${Math.sin(angle) * r}px);
+      background: ${sparkColors[i % sparkColors.length]};
+      box-shadow: 0 0 6px ${sparkColors[i % sparkColors.length]};
+      --sx: ${(Math.random()-0.5)*28}px;
+      --sy: ${(Math.random()-0.5)*28}px;
+      animation-delay: ${Math.random() * 0.8}s;
+    `;
+    box.appendChild(sp);
+  }
+}
+
+document.getElementById('modalArcadeBtn').addEventListener('click', () => {
+  goToArcadeWithUnlock();
+});
+document.getElementById('modalStayBtn').addEventListener('click', () => {
+  const modal = document.getElementById('streakModal');
+  modal.classList.remove('show');
+  document.querySelectorAll('.modal-spark').forEach(s => s.remove());
+});
+
+initScene();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
