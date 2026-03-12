@@ -52,6 +52,7 @@
     .btn:hover { background:var(--accent); color:#05050a; box-shadow:0 0 36px rgba(42,245,184,.6); }
     .hint { margin-top:1.2rem; font-size:.7rem; letter-spacing:.15em; opacity:.35; }
 
+    /* ── Countdown (start) ── */
     #countdown {
       position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
       background:rgba(5,5,10,.85); backdrop-filter:blur(4px);
@@ -63,18 +64,36 @@
       text-shadow:0 0 40px var(--accent),0 0 100px rgba(42,245,184,.4);
       animation:countPop .9s ease-out;
     }
-    @keyframes countPop {
-      0%   { transform:scale(2);   opacity:0; }
-      30%  { transform:scale(1);   opacity:1; }
-      75%  { transform:scale(1);   opacity:1; }
-      100% { transform:scale(0.6); opacity:0; }
+
+    /* ══════════════════════════════════════════════
+       NEW: Resume countdown overlay (appears over running game when resuming from pause)
+    ══════════════════════════════════════════════ */
+    #resumeCountdown {
+      position:fixed; inset:0; z-index:350; display:flex; align-items:center; justify-content:center;
+      background:rgba(5,5,10,.75); backdrop-filter:blur(3px);
+      opacity:0; pointer-events:none; transition:opacity .25s;
+    }
+    #resumeCountdown.show { opacity:1; pointer-events:all; }
+    #resumeCountdownNum {
+      font-family:var(--display); font-size:10rem; color:var(--accent3);
+      text-shadow:0 0 40px var(--accent3), 0 0 90px rgba(245,193,42,.5);
+      animation:countPop .8s ease-out;
     }
 
-    #gameOverScreen { background:rgba(5,5,10,.92); gap:0; }
-    .over-title { font-family:var(--display); font-size:clamp(3rem,8vw,6rem); color:var(--accent2); text-shadow:0 0 30px var(--accent2); letter-spacing:.15em; }
-    .over-stats { margin:1.6rem 0 1.4rem; text-align:center; line-height:2; font-size:.9rem; opacity:.8; }
+    /* ── Game over screen ── */
+    #gameOverScreen {
+      background:rgba(5,5,10,.97);
+      gap:0;
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding: 2.5rem 1rem 3rem;
+    }
+    .over-title { font-family:var(--display); font-size:clamp(3rem,8vw,6rem); color:var(--accent2); text-shadow:0 0 30px var(--accent2); letter-spacing:.15em; margin-bottom: .2rem; }
+    .over-stats { margin:1.2rem 0 1rem; text-align:center; line-height:2; font-size:.9rem; opacity:.8; }
     .over-stats span { color:var(--accent); font-size:1.2rem; }
-    .unlock-badge { display:none; background:linear-gradient(135deg,rgba(57,255,20,0.15),rgba(0,245,255,0.1)); border:1.5px solid #39ff14; border-radius:4px; padding:.7rem 1.8rem; margin-bottom:1.6rem; text-align:center; font-family:var(--display); font-size:1.1rem; letter-spacing:.15em; color:#39ff14; text-shadow:0 0 12px #39ff14; animation:badgePulse 1.5s ease-in-out infinite; }
+    /* NEW: bestCombo highlight in game over */
+    .over-stats .best-combo-val { color:var(--accent3); font-size:1.4rem; text-shadow:0 0 10px var(--accent3); }
+    .unlock-badge { display:none; background:linear-gradient(135deg,rgba(57,255,20,0.15),rgba(0,245,255,0.1)); border:1.5px solid #39ff14; border-radius:4px; padding:.7rem 1.8rem; margin-bottom:1.2rem; text-align:center; font-family:var(--display); font-size:1.1rem; letter-spacing:.15em; color:#39ff14; text-shadow:0 0 12px #39ff14; animation:badgePulse 1.5s ease-in-out infinite; }
     .unlock-badge.visible { display:block; }
     @keyframes badgePulse { 0%,100%{box-shadow:0 0 24px rgba(57,255,20,.2);}50%{box-shadow:0 0 40px rgba(57,255,20,.5);} }
     .btn-row { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; justify-content:center; }
@@ -82,6 +101,7 @@
     .btn-arcade:hover { border-color:var(--accent); color:var(--accent); }
     .btn-arcade.highlighted { border-color:#39ff14; color:#39ff14; box-shadow:0 0 20px rgba(57,255,20,.3); }
 
+    /* ── In-game HUD ── */
     #gameWrap { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; }
     #hud { width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:flex-end; padding:.8rem 1rem .4rem; z-index:10; position:relative; }
     .hud-block { display:flex; flex-direction:column; }
@@ -90,20 +110,12 @@
     #scoreVal  { color:var(--accent); }
     #streakVal { color:var(--accent3); }
     #multVal   { font-size:1rem; opacity:.7; color:var(--accent3); }
+    /* NEW: bestCombo display in HUD */
+    #bestComboVal { color: var(--accent2); font-size: 1.1rem; opacity: 0.8; font-family: var(--display); letter-spacing: .06em; }
 
-    #progressBar {
-      width:100%; max-width:520px; height:3px; background:rgba(255,255,255,.08);
-      position:relative; z-index:10;
-    }
-    #progressFill {
-      height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent2));
-      box-shadow:0 0 8px var(--accent); transition:width .5s linear;
-    }
-    #drumMarker {
-      position:absolute; top:-3px; width:3px; height:9px;
-      background:#f5c12a; box-shadow:0 0 6px #f5c12a;
-      left: 74.7%;
-    }
+    #progressBar { width:100%; max-width:520px; height:3px; background:rgba(255,255,255,.08); position:relative; z-index:10; }
+    #progressFill { height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow:0 0 8px var(--accent); transition:width .5s linear; }
+    #drumMarker { position:absolute; top:-3px; width:3px; height:9px; background:#f5c12a; box-shadow:0 0 6px #f5c12a; left: 74.7%; }
 
     #inGameBackBtn {
       position:absolute; top:50%; right:0; transform:translateY(-50%);
@@ -149,68 +161,134 @@
     .note[data-lane="3"] { background:linear-gradient(180deg,rgba(245,193,42,.9),rgba(245,193,42,.6)); color:#05050a; box-shadow:0 0 16px rgba(245,193,42,.5); }
     .note.hit  { animation:noteHit  .25s ease-out forwards; }
     .note.miss { animation:noteMiss .3s  ease-out forwards; }
-
     .note.drum-break-note {
       background:linear-gradient(180deg,rgba(255,220,0,.95),rgba(245,140,0,.85)) !important;
       color:#05050a !important;
       box-shadow:0 0 24px rgba(255,200,0,.8), 0 0 48px rgba(255,180,0,.4) !important;
       animation:drumNotePulse .3s ease-in-out infinite alternate;
     }
-    @keyframes drumNotePulse {
-      from { box-shadow:0 0 16px rgba(255,200,0,.7); }
-      to   { box-shadow:0 0 36px rgba(255,200,0,1), 0 0 60px rgba(255,160,0,.6); }
-    }
+    @keyframes drumNotePulse { from{box-shadow:0 0 16px rgba(255,200,0,.7);}to{box-shadow:0 0 36px rgba(255,200,0,1),0 0 60px rgba(255,160,0,.6);} }
 
     .particle { position:absolute; width:6px; height:6px; border-radius:50%; pointer-events:none; z-index:6; animation:particleFly .5s ease-out forwards; }
     .combo-burst { position:absolute; left:50%; transform:translateX(-50%); bottom:110px; font-family:var(--display); font-size:1.4rem; letter-spacing:.1em; color:var(--accent3); text-shadow:0 0 12px var(--accent3); pointer-events:none; z-index:8; animation:burstPop .6s ease-out forwards; white-space:nowrap; }
     #missFlash { position:fixed; inset:0; background:rgba(245,42,124,.12); pointer-events:none; z-index:90; opacity:0; transition:opacity .05s; }
     #missFlash.show { opacity:1; }
 
+    /* ── Streak unlock modal ── */
     #streakModal { display:none; position:fixed; inset:0; z-index:500; align-items:center; justify-content:center; background:rgba(5,5,10,0.88); backdrop-filter:blur(7px); }
     #streakModal.show { display:flex; animation:modalFadeIn .3s ease-out; }
     .modal-box { position:relative; background:linear-gradient(160deg,#0d0d22,#05050a); border:2px solid #39ff14; border-radius:10px; padding:44px 48px 40px; text-align:center; max-width:420px; width:90%; box-shadow:0 0 60px rgba(57,255,20,0.3),0 0 120px rgba(57,255,20,0.1); animation:modalPop .4s cubic-bezier(0.34,1.56,0.64,1); }
     .modal-icon { font-size:52px; margin-bottom:12px; animation:iconSpin .6s ease-out; }
-    .modal-title { font-family:var(--display); font-size:2.8rem; letter-spacing:.15em; color:#39ff14; text-shadow:0 0 20px #39ff14,0 0 40px rgba(57,255,20,0.5); margin-bottom:6px; }
+    .modal-title { font-family:var(--display); font-size:2.8rem; letter-spacing:.15em; color:#39ff14; text-shadow:0 0 20px #39ff14,0 0 40px rgba(57,255,20,.5); margin-bottom:6px; }
     .modal-sub { font-size:.75rem; letter-spacing:.25em; color:rgba(255,255,255,.4); margin-bottom:24px; text-transform:uppercase; }
     .modal-stat { display:inline-block; background:rgba(57,255,20,0.08); border:1px solid rgba(57,255,20,0.25); border-radius:4px; padding:8px 20px; margin-bottom:28px; font-family:var(--display); font-size:1.3rem; color:var(--accent3); text-shadow:0 0 10px var(--accent3); }
     .modal-divider { height:1px; background:linear-gradient(90deg,transparent,rgba(57,255,20,0.3),transparent); margin-bottom:24px; }
     .modal-question { font-size:.72rem; letter-spacing:.2em; color:rgba(255,255,255,.35); margin-bottom:16px; text-transform:uppercase; }
     .modal-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-    .modal-btn-arcade { font-family:var(--display); font-size:1.2rem; letter-spacing:.15em; padding:.65rem 1.8rem; background:#39ff14; color:#05050a; border:none; border-radius:4px; cursor:pointer; box-shadow:0 0 24px rgba(57,255,20,0.5),4px 4px 0 rgba(0,0,0,0.4); transition:all .15s; }
-    .modal-btn-arcade:hover { transform:translate(-2px,-2px); box-shadow:0 0 40px rgba(57,255,20,0.8),6px 6px 0 rgba(0,0,0,0.4); }
+    .modal-btn-arcade { font-family:var(--display); font-size:1.2rem; letter-spacing:.15em; padding:.65rem 1.8rem; background:#39ff14; color:#05050a; border:none; border-radius:4px; cursor:pointer; box-shadow:0 0 24px rgba(57,255,20,.5),4px 4px 0 rgba(0,0,0,.4); transition:all .15s; }
+    .modal-btn-arcade:hover { transform:translate(-2px,-2px); box-shadow:0 0 40px rgba(57,255,20,.8),6px 6px 0 rgba(0,0,0,.4); }
     .modal-btn-stay { font-family:var(--display); font-size:1.2rem; letter-spacing:.15em; padding:.65rem 1.8rem; background:transparent; color:rgba(255,255,255,.4); border:2px solid rgba(255,255,255,.15); border-radius:4px; cursor:pointer; transition:all .15s; }
     .modal-btn-stay:hover { color:var(--accent); border-color:var(--accent); box-shadow:0 0 16px rgba(42,245,184,.3); }
     .modal-spark { position:absolute; width:5px; height:5px; border-radius:50%; pointer-events:none; animation:sparkFloat 2s ease-in-out infinite; }
 
-    @keyframes pulse { 0%,100%{text-shadow:0 0 20px var(--accent),0 0 60px rgba(42,245,184,.4);}50%{text-shadow:0 0 40px var(--accent),0 0 100px rgba(42,245,184,.7),0 0 160px rgba(42,245,184,.3);} }
-    @keyframes noteHit  { 0%{transform:scaleY(1) scaleX(1);opacity:1;}60%{transform:scaleY(.3) scaleX(1.4);opacity:.8;}100%{transform:scaleY(0) scaleX(1.8);opacity:0;} }
-    @keyframes noteMiss { 0%{opacity:1;transform:translateX(0);}30%{transform:translateX(-6px);}60%{transform:translateX(6px);}100%{opacity:0;} }
-    @keyframes particleFly { 0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0);} }
-    @keyframes burstPop { 0%{opacity:0;transform:translateX(-50%) scale(.5);}30%{opacity:1;transform:translateX(-50%) scale(1.2);}70%{opacity:1;transform:translateX(-50%) scale(1);}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-20px);} }
-    @keyframes modalFadeIn { from{opacity:0;}to{opacity:1;} }
-    @keyframes modalPop    { from{transform:scale(0.6);opacity:0;}to{transform:scale(1);opacity:1;} }
-    @keyframes iconSpin    { from{transform:rotate(-20deg) scale(0.5);}to{transform:rotate(0deg) scale(1);} }
-    @keyframes sparkFloat  { 0%,100%{transform:translate(0,0) scale(1);opacity:1;}50%{transform:translate(var(--sx),var(--sy)) scale(1.4);opacity:0.6;} }
+    /* ══════════════════════════════════════════════
+       NEW: Pause Menu styles
+    ══════════════════════════════════════════════ */
+    #pauseMenu {
+      background: rgba(5,5,10,0.97);
+      z-index: 400;
+      gap: 0;
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding: 2rem 1rem 3rem;
+    }
+    .pause-logo {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      letter-spacing: .15em;
+      color: var(--accent3);
+      text-shadow: 0 0 20px var(--accent3), 0 0 50px rgba(245,193,42,.3);
+      margin-bottom: .3rem;
+    }
+    .pause-sub {
+      font-size: .7rem;
+      letter-spacing: .35em;
+      color: rgba(255,255,255,.3);
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+    }
+    .pause-best-combo {
+      font-family: var(--display);
+      font-size: 1.2rem;
+      letter-spacing: .15em;
+      color: var(--accent3);
+      margin-bottom: 1.6rem;
+      padding: .5rem 1.4rem;
+      background: rgba(245,193,42,.08);
+      border: 1px solid rgba(245,193,42,.25);
+      border-radius: 4px;
+    }
+    .pause-btns {
+      display: flex;
+      flex-direction: column;
+      gap: .8rem;
+      width: 100%;
+      max-width: 320px;
+      margin-bottom: 2rem;
+    }
+    .pause-btn {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      letter-spacing: .18em;
+      padding: .7rem 2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .pause-btn-resume {
+      background: var(--accent);
+      color: #05050a;
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 20px rgba(42,245,184,.4);
+    }
+    .pause-btn-resume:hover { box-shadow: 0 0 40px rgba(42,245,184,.7); }
+    .pause-btn-submit {
+      background: transparent;
+      color: var(--accent3);
+      border: 2px solid var(--accent3);
+      box-shadow: 0 0 14px rgba(245,193,42,.2);
+    }
+    .pause-btn-submit:hover { background: rgba(245,193,42,.1); box-shadow: 0 0 28px rgba(245,193,42,.4); }
+    .pause-btn-exit {
+      background: transparent;
+      color: rgba(255,255,255,.35);
+      border: 2px solid rgba(255,255,255,.15);
+    }
+    .pause-btn-exit:hover { color: var(--accent2); border-color: var(--accent2); }
+
+    /* Pause menu inline submit form */
+    #pauseSubmitArea {
+      display: none;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 1.6rem;
+    }
+    #pauseSubmitArea.show { display: block; }
 
     /* ══════════════════════════════════════════════
-       LEADERBOARD STYLES (new)
+       NEW: Leaderboard styles (used in both game over + pause menu)
     ══════════════════════════════════════════════ */
-    #lbOverlay {
-      /* Positioned below the game over screen, scrollable */
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      max-height: 50vh;
-      overflow-y: auto;
-      z-index: 110;
-      background: rgba(5,5,10,0.97);
-      border-top: 1px solid rgba(42,245,184,0.2);
-      transform: translateY(100%);
-      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      font-family: var(--mono);
+    .lb-section {
+      width: 100%;
+      max-width: 520px;
+      margin-top: 1.8rem;
     }
-    #lbOverlay.visible { transform: translateY(0); }
 
-    .lb-inner { max-width: 520px; margin: 0 auto; padding: 16px 16px 24px; }
+    .lb-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(42,245,184,.3), transparent);
+      margin: 1.6rem 0;
+    }
 
     .lb-submit-panel {
       background: rgba(42,245,184,0.06);
@@ -218,6 +296,10 @@
       border-radius: 8px;
       padding: 14px 18px;
       margin-bottom: 14px;
+    }
+    .lb-submit-panel.gold-theme {
+      background: rgba(245,193,42,0.06);
+      border-color: rgba(245,193,42,0.25);
     }
 
     .lb-submit-title {
@@ -228,13 +310,14 @@
       text-shadow: 0 0 8px var(--accent);
       margin-bottom: 10px;
     }
+    .lb-submit-title.gold { color: var(--accent3); text-shadow: 0 0 8px var(--accent3); }
 
     .lb-score-display {
       font-family: var(--display);
-      font-size: 26px;
+      font-size: 2.2rem;
       color: #fff;
       text-align: center;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .lb-score-label {
@@ -348,6 +431,31 @@
     .lb-empty { padding: 20px; text-align: center; font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.2); }
     .lb-loading { padding: 18px; text-align: center; font-size: 11px; letter-spacing: 2px; color: rgba(42,245,184,0.4); animation: lbBlink 1s step-end infinite; }
     @keyframes lbBlink { 50% { opacity: 0.3; } }
+
+    /* Pause hint bar */
+    #pauseHint {
+      position: fixed;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: .6rem;
+      letter-spacing: .2em;
+      color: rgba(255,255,255,.18);
+      pointer-events: none;
+      z-index: 12;
+      white-space: nowrap;
+    }
+
+    @keyframes countPop { 0%{transform:scale(2);opacity:0;}30%{transform:scale(1);opacity:1;}75%{transform:scale(1);opacity:1;}100%{transform:scale(0.6);opacity:0;} }
+    @keyframes pulse { 0%,100%{text-shadow:0 0 20px var(--accent),0 0 60px rgba(42,245,184,.4);}50%{text-shadow:0 0 40px var(--accent),0 0 100px rgba(42,245,184,.7),0 0 160px rgba(42,245,184,.3);} }
+    @keyframes noteHit  { 0%{transform:scaleY(1) scaleX(1);opacity:1;}60%{transform:scaleY(.3) scaleX(1.4);opacity:.8;}100%{transform:scaleY(0) scaleX(1.8);opacity:0;} }
+    @keyframes noteMiss { 0%{opacity:1;transform:translateX(0);}30%{transform:translateX(-6px);}60%{transform:translateX(6px);}100%{opacity:0;} }
+    @keyframes particleFly { 0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0);} }
+    @keyframes burstPop { 0%{opacity:0;transform:translateX(-50%) scale(.5);}30%{opacity:1;transform:translateX(-50%) scale(1.2);}70%{opacity:1;transform:translateX(-50%) scale(1);}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-20px);} }
+    @keyframes modalFadeIn { from{opacity:0;}to{opacity:1;} }
+    @keyframes modalPop    { from{transform:scale(0.6);opacity:0;}to{transform:scale(1);opacity:1;} }
+    @keyframes iconSpin    { from{transform:rotate(-20deg) scale(0.5);}to{transform:rotate(0deg) scale(1);} }
+    @keyframes sparkFloat  { 0%,100%{transform:translate(0,0) scale(1);opacity:1;}50%{transform:translate(var(--sx),var(--sy)) scale(1.4);opacity:0.6;} }
   </style>
 </head>
 <body>
@@ -365,15 +473,17 @@
     <div class="key-box"><div class="key-cap k">K</div><div class="key-label">LANE 4</div></div>
   </div>
   <button class="btn" id="startBtn">START GAME</button>
-  <div class="hint">HIT 30 COMBO TO UNLOCK STAGE 3 — THE FINALE &nbsp;|&nbsp; ⚡ SURVIVE THE DRUM BREAK AT 3:40</div>
+  <div class="hint">HIT 30 COMBO TO UNLOCK STAGE 3 &nbsp;|&nbsp; PRESS X TO PAUSE &nbsp;|&nbsp; ⚡ SURVIVE THE DRUM BREAK AT 3:40</div>
 </div>
 
-<!-- ── Game Over Screen ── -->
+<!-- ── Game Over Screen (now scrollable, with embedded leaderboard) ── -->
 <div id="gameOverScreen" class="screen hidden">
   <div class="over-title">STREAK BROKEN</div>
   <div class="over-stats">
     SCORE &nbsp;&nbsp;<span id="finalScore">0</span><br>
     BEST STREAK &nbsp;&nbsp;<span id="finalStreak">0</span><br>
+    <!-- NEW: bestCombo display -->
+    BEST COMBO &nbsp;&nbsp;<span id="finalBestCombo" class="best-combo-val">0</span><br>
     MAX MULTIPLIER &nbsp;&nbsp;<span id="finalMult">1×</span>
   </div>
   <div class="unlock-badge" id="unlockBadge">✅ STAGE 3 UNLOCKED — HEAD BACK TO ARCADE!</div>
@@ -381,69 +491,18 @@
     <button class="btn" id="restartBtn">TRY AGAIN</button>
     <button class="btn-arcade" id="arcadeBtn">← ARCADE HUB</button>
   </div>
-</div>
 
-<!-- ── Game ── -->
-<div id="gameWrap">
-  <div id="hud">
-    <div class="hud-block">
-      <div class="hud-label">SCORE</div>
-      <div class="hud-value" id="scoreVal">0</div>
-    </div>
-    <div class="hud-block" style="text-align:center">
-      <div class="hud-label">STREAK</div>
-      <div class="hud-value" id="streakVal">0</div>
-      <div id="multVal">1×</div>
-    </div>
-    <div class="hud-block" style="text-align:right; padding-right:80px;">
-      <div class="hud-label">BEST</div>
-      <div class="hud-value" id="bestVal">0</div>
-    </div>
-    <button id="inGameBackBtn">■ QUIT</button>
-  </div>
+  <!-- ══════════════════════════════════════════════
+       NEW: Leaderboard section embedded in game over screen
+  ══════════════════════════════════════════════ -->
+  <div class="lb-section" id="lbSection">
+    <div class="lb-divider"></div>
 
-  <div id="progressBar">
-    <div id="progressFill"></div>
-    <div id="drumMarker" title="Drum Break!"></div>
-  </div>
-
-  <div id="laneWrap">
-    <div id="hitLine"></div>
-  </div>
-  <div id="songLabel">IN THE AIR TONIGHT — PHIL COLLINS</div>
-</div>
-
-<div id="countdown"><div class="countdown-num" id="countdownNum">3</div></div>
-<div id="drumAlert">🥁 DRUM BREAK!</div>
-<div id="missFlash"></div>
-
-<!-- ── Unlock modal ── -->
-<div id="streakModal">
-  <div class="modal-box" id="modalBox">
-    <div class="modal-icon">🎉</div>
-    <div class="modal-title">UNLOCKED!</div>
-    <div class="modal-sub">Stage 3 — The Finale</div>
-    <div class="modal-stat" id="modalComboStat">20 COMBO</div>
-    <div class="modal-divider"></div>
-    <div class="modal-question">What do you want to do?</div>
-    <div class="modal-btns">
-      <button class="modal-btn-arcade" id="modalArcadeBtn">⚡ BACK TO ARCADE</button>
-      <button class="modal-btn-stay"   id="modalStayBtn">KEEP PLAYING</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════
-     LEADERBOARD PANEL (new) — slides up from bottom on game over
-══════════════════════════════════════════════ -->
-<div id="lbOverlay">
-  <div class="lb-inner">
-
-    <!-- Score submission form -->
+    <!-- Score submit panel -->
     <div class="lb-submit-panel" id="lbSubmitPanel">
-      <div class="lb-submit-title">📊 SUBMIT YOUR SCORE</div>
+      <div class="lb-submit-title">📊 SUBMIT YOUR BEST COMBO</div>
       <div class="lb-score-display" id="lbScoreDisplay">0</div>
-      <div class="lb-score-label">LONGEST COMBO</div>
+      <div class="lb-score-label">BEST COMBO THIS RUN</div>
       <div class="lb-input-row">
         <input class="lb-username-input" id="lbUsernameInput"
           type="text" maxlength="12" placeholder="YOUR NAME"
@@ -463,12 +522,127 @@
         <div class="lb-loading">LOADING...</div>
       </div>
     </div>
+  </div>
+  <!-- END NEW leaderboard section -->
+</div>
 
+<!-- ── Game ── -->
+<div id="gameWrap">
+  <div id="hud">
+    <div class="hud-block">
+      <div class="hud-label">SCORE</div>
+      <div class="hud-value" id="scoreVal">0</div>
+    </div>
+    <div class="hud-block" style="text-align:center">
+      <div class="hud-label">STREAK</div>
+      <div class="hud-value" id="streakVal">0</div>
+      <div id="multVal">1×</div>
+    </div>
+    <!-- NEW: best combo in HUD -->
+    <div class="hud-block" style="text-align:center">
+      <div class="hud-label">BEST COMBO</div>
+      <div class="hud-value" id="bestComboVal">0</div>
+    </div>
+    <div class="hud-block" style="text-align:right; padding-right:80px;">
+      <div class="hud-label">BEST</div>
+      <div class="hud-value" id="bestVal">0</div>
+    </div>
+    <button id="inGameBackBtn">■ QUIT</button>
+  </div>
+
+  <div id="progressBar">
+    <div id="progressFill"></div>
+    <div id="drumMarker" title="Drum Break!"></div>
+  </div>
+
+  <div id="laneWrap">
+    <div id="hitLine"></div>
+  </div>
+  <div id="songLabel">IN THE AIR TONIGHT — PHIL COLLINS</div>
+</div>
+
+<!-- Pause hint -->
+<div id="pauseHint">PRESS X TO PAUSE</div>
+
+<div id="countdown"><div class="countdown-num" id="countdownNum">3</div></div>
+
+<!-- ══════════════════════════════════════════════
+     NEW: Resume countdown overlay (used when resuming from pause or modal)
+══════════════════════════════════════════════ -->
+<div id="resumeCountdown">
+  <div id="resumeCountdownNum"></div>
+</div>
+
+<div id="drumAlert">🥁 DRUM BREAK!</div>
+<div id="missFlash"></div>
+
+<!-- ── Streak unlock modal ── -->
+<div id="streakModal">
+  <div class="modal-box" id="modalBox">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">UNLOCKED!</div>
+    <div class="modal-sub">Stage 3 — The Finale</div>
+    <div class="modal-stat" id="modalComboStat">20 COMBO</div>
+    <div class="modal-divider"></div>
+    <div class="modal-question">What do you want to do?</div>
+    <div class="modal-btns">
+      <button class="modal-btn-arcade" id="modalArcadeBtn">⚡ BACK TO ARCADE</button>
+      <button class="modal-btn-stay"   id="modalStayBtn">KEEP PLAYING</button>
+    </div>
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     NEW: Pause Menu overlay
+══════════════════════════════════════════════ -->
+<div id="pauseMenu" class="screen hidden">
+  <div class="pause-logo">PAUSED</div>
+  <div class="pause-sub">─ GAME PAUSED ─</div>
+
+  <!-- Current best combo shown in pause menu -->
+  <div class="pause-best-combo" id="pauseBestComboDisplay">BEST COMBO: 0</div>
+
+  <div class="pause-btns">
+    <button class="pause-btn pause-btn-resume" id="pauseResumeBtn">▶ RESUME</button>
+    <button class="pause-btn pause-btn-submit" id="pauseSubmitBtn">📊 SUBMIT SCORE</button>
+    <button class="pause-btn pause-btn-exit"   id="pauseExitBtn">← EXIT GAME</button>
+  </div>
+
+  <!-- Inline submit form (visible after clicking Submit Score) -->
+  <div id="pauseSubmitArea">
+    <div class="lb-submit-panel">
+      <div class="lb-submit-title">SUBMIT BEST COMBO</div>
+      <div class="lb-score-display" id="pauseScoreDisplay">0</div>
+      <div class="lb-score-label">BEST COMBO THIS RUN</div>
+      <div class="lb-input-row">
+        <input class="lb-username-input" id="pauseUsernameInput"
+          type="text" maxlength="12" placeholder="YOUR NAME"
+          autocomplete="off" spellcheck="false" />
+        <button class="lb-submit-btn" id="pauseSubmitScoreBtn">SUBMIT</button>
+      </div>
+      <div class="lb-submit-status" id="pauseSubmitStatus"></div>
+    </div>
+  </div>
+
+  <!-- Mini leaderboard in pause menu -->
+  <div class="lb-section" id="pauseLbSection" style="max-width:420px;">
+    <div class="lb-panel">
+      <div class="lb-header">
+        <div class="lb-title">🏆 Top Combos</div>
+        <button class="lb-refresh-btn" id="pauseLbRefreshBtn">↻</button>
+      </div>
+      <div id="pauseLbTableContainer">
+        <div class="lb-loading">LOADING...</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END NEW pause menu -->
+
 <!-- ═══════════════════════════════════════════════
-     FIREBASE — Leaderboard backend (new)
+     FIREBASE — Leaderboard backend
+     Collection: "leaderboard_combo"
+     Tracks bestCombo (highest combo in a run)
 ═══════════════════════════════════════════════ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
@@ -477,7 +651,6 @@
     orderBy, limit, getDocs, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-  // ── Firebase config ── REPLACE with your own project values ──
   const firebaseConfig = {
     apiKey: "AIzaSyAFE1i-ziXh1Z9FRVOgI_8EG-set2Oy2vA",
     authDomain: "groupjam-arcade.firebaseapp.com",
@@ -485,29 +658,18 @@
     storageBucket: "groupjam-arcade.firebasestorage.app",
     messagingSenderId: "633215767657",
     appId: "1:633215767657:web:6617a23a5a32850ca93ef8"
-};
+  };
 
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  const COLLECTION = "leaderboard_combo";  // Firestore collection name
+  const COLLECTION = "leaderboard_combo";
   const TOP_N      = 10;
 
-  async function loadLeaderboard() {
-    const container = document.getElementById('lbTableContainer');
-    container.innerHTML = '<div class="lb-loading">LOADING...</div>';
-    try {
-      const q = query(collection(db, COLLECTION), orderBy("score", "desc"), limit(TOP_N));
-      const snap = await getDocs(q);
-      renderTable(snap.docs.map(d => d.data()));
-    } catch (e) {
-      container.innerHTML = '<div class="lb-empty">Could not load leaderboard.</div>';
-      console.error("Leaderboard load error:", e);
-    }
-  }
-
-  function renderTable(rows) {
-    const container = document.getElementById('lbTableContainer');
+  /* ── Render rows into a container element ── */
+  function renderTable(rows, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
     if (!rows.length) {
       container.innerHTML = '<div class="lb-empty">NO SCORES YET — BE THE FIRST!</div>';
       return;
@@ -530,9 +692,37 @@
   }
 
   function sanitize(str) {
-    return String(str).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(str).replace(/[<>&"']/g, c =>
+      ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])
+    );
   }
 
+  /* ── Fetch and render into both table containers ── */
+  async function loadLeaderboard() {
+    ['lbTableContainer','pauseLbTableContainer'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="lb-loading">LOADING...</div>';
+    });
+    try {
+      const q = query(
+        collection(db, COLLECTION),
+        orderBy("score", "desc"),
+        limit(TOP_N)
+      );
+      const snap = await getDocs(q);
+      const rows = snap.docs.map(d => d.data());
+      renderTable(rows, 'lbTableContainer');
+      renderTable(rows, 'pauseLbTableContainer');
+    } catch (e) {
+      ['lbTableContainer','pauseLbTableContainer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<div class="lb-empty">Could not load leaderboard.</div>';
+      });
+      console.error("Leaderboard load error:", e);
+    }
+  }
+
+  /* ── Submit a score ── */
   async function submitScore(username, score) {
     await addDoc(collection(db, COLLECTION), {
       username: username.trim().toUpperCase().slice(0, 12),
@@ -541,15 +731,48 @@
     });
   }
 
-  /* Wire up UI */
-  document.getElementById('lbRefreshBtn').addEventListener('click', loadLeaderboard);
+  /* ══════════════════════════════════════════════
+     Expose functions to game script
+  ══════════════════════════════════════════════ */
 
+  /* Called after game over — populates game-over leaderboard section */
+  window.lbShow = function(bestCombo) {
+    window._lbPendingScore = bestCombo;
+    // Populate submit panel
+    const scoreDisplay = document.getElementById('lbScoreDisplay');
+    if (scoreDisplay) scoreDisplay.textContent = bestCombo;
+    // Reset form state
+    const input  = document.getElementById('lbUsernameInput');
+    const btn    = document.getElementById('lbSubmitBtn');
+    const status = document.getElementById('lbSubmitStatus');
+    if (input)  { input.disabled = false; input.value = ''; }
+    if (btn)    { btn.disabled = false; btn.textContent = 'SUBMIT'; }
+    if (status) { status.textContent = ''; status.className = 'lb-submit-status'; }
+    // Refresh the table
+    loadLeaderboard();
+  };
+
+  /* Called when opening pause menu — updates pause score display */
+  window.lbUpdatePauseScore = function(bestCombo) {
+    const el = document.getElementById('pauseScoreDisplay');
+    if (el) el.textContent = bestCombo;
+    window._lbPendingScore = bestCombo;
+    loadLeaderboard();
+  };
+
+  window.lbLoad = loadLeaderboard;
+
+  /* ── Game Over submit button ── */
   document.getElementById('lbSubmitBtn').addEventListener('click', async () => {
     const input  = document.getElementById('lbUsernameInput');
     const status = document.getElementById('lbSubmitStatus');
     const btn    = document.getElementById('lbSubmitBtn');
     const name   = input.value.trim();
-    if (!name) { status.textContent = 'ENTER A USERNAME FIRST'; status.className = 'lb-submit-status error'; return; }
+    if (!name) {
+      status.textContent = 'ENTER A USERNAME FIRST';
+      status.className   = 'lb-submit-status error';
+      return;
+    }
     const score = window._lbPendingScore || 0;
     btn.disabled = true;
     status.textContent = 'SUBMITTING...';
@@ -570,29 +793,55 @@
     }
   });
 
-  /* Expose to game code */
-  window.lbLoad = loadLeaderboard;
-  window.lbShow = function(bestStreak) {
-    window._lbPendingScore = bestStreak;
-    const panel  = document.getElementById('lbSubmitPanel');
-    const input  = document.getElementById('lbUsernameInput');
-    const btn    = document.getElementById('lbSubmitBtn');
-    const status = document.getElementById('lbSubmitStatus');
-    document.getElementById('lbScoreDisplay').textContent = bestStreak;
-    // Reset form state
-    input.disabled  = false;
-    btn.disabled    = false;
-    btn.textContent = 'SUBMIT';
-    status.textContent = '';
-    // Slide up the leaderboard overlay
-    document.getElementById('lbOverlay').classList.add('visible');
-  };
+  /* ── Refresh buttons ── */
+  document.getElementById('lbRefreshBtn').addEventListener('click', loadLeaderboard);
+  document.getElementById('pauseLbRefreshBtn').addEventListener('click', loadLeaderboard);
 
+  /* ── Pause menu submit button ── */
+  document.getElementById('pauseSubmitScoreBtn').addEventListener('click', async () => {
+    const input  = document.getElementById('pauseUsernameInput');
+    const status = document.getElementById('pauseSubmitStatus');
+    const btn    = document.getElementById('pauseSubmitScoreBtn');
+    const name   = input.value.trim();
+    if (!name) {
+      status.textContent = 'ENTER A USERNAME FIRST';
+      status.className   = 'lb-submit-status error';
+      return;
+    }
+    const score = window._lbPendingScore || 0;
+    btn.disabled = true;
+    status.textContent = 'SUBMITTING...';
+    status.className   = 'lb-submit-status';
+    try {
+      await submitScore(name, score);
+      window._lbLastSubmittedName = name.toUpperCase().slice(0, 12);
+      status.textContent = '✓ COMBO SUBMITTED!';
+      status.className   = 'lb-submit-status ok';
+      btn.textContent    = '✓ DONE';
+      input.disabled     = true;
+      await loadLeaderboard();
+    } catch (e) {
+      status.textContent = 'SUBMIT FAILED — CHECK CONNECTION';
+      status.className   = 'lb-submit-status error';
+      btn.disabled = false;
+      console.error("Submit error:", e);
+    }
+  });
+
+  // Initial load
   loadLeaderboard();
 </script>
 
 <!-- ═══════════════════════════════════════════════
-     GAME SCRIPT (original — only endGame patched)
+     GAME SCRIPT
+     Changes from original:
+     - Added bestCombo tracking
+     - Added isPaused / pauseGame() / resumeAfterCountdown()
+     - Added X key pause listener
+     - fireUnlock now pauses game before showing modal
+     - modalStayBtn resumes with countdown instead of instantly
+     - endGame uses state.bestCombo for leaderboard
+     - startGame resets bestCombo
 ═══════════════════════════════════════════════ -->
 <script>
 const COMBO_REQUIRED = 30;
@@ -841,13 +1090,25 @@ function playSound(type, lane) {
   }
 }
 
+// ══════════════════════════════════════════════
+// State — bestCombo added
+// ══════════════════════════════════════════════
 const state = {
-  running: false, score: 0, streak: 0, bestStreak: 0, maxMult: 1,
+  running: false,
+  score: 0, streak: 0, bestStreak: 0, maxMult: 1,
+  bestCombo: 0,       // NEW: tracks highest combo in current run
   totalHits: 0, notes: [], bestScore: 0, unlockFired: false,
   songNoteIdx: 0, songStartedAt: 0, travelTime: 0,
   drumAlertFired: false,
 };
 let rafId = null, lastFrameTime = 0;
+
+// ══════════════════════════════════════════════
+// NEW: Pause state variables
+// ══════════════════════════════════════════════
+let isPaused  = false;
+let pausedAt  = 0;   // performance.now() timestamp when pause started
+let pauseModalOpen = false; // tracks if streak modal is currently showing (for popup protection)
 
 const startScreen    = document.getElementById('startScreen');
 const gameOverScreen = document.getElementById('gameOverScreen');
@@ -869,6 +1130,7 @@ const progressFill   = document.getElementById('progressFill');
 const drumAlert      = document.getElementById('drumAlert');
 const countdownEl    = document.getElementById('countdown');
 const countdownNum   = document.getElementById('countdownNum');
+const bestComboValEl = document.getElementById('bestComboVal');
 const laneEls        = [];
 
 function buildLanes() {
@@ -886,6 +1148,10 @@ function buildLanes() {
 
 function getSongTime() {
   if (usingSongFile && !songAudio.paused) return songAudio.currentTime;
+  if (isPaused) {
+    // Return time at the moment we paused
+    return (pausedAt - state.songStartedAt) / 1000;
+  }
   return (performance.now() - state.songStartedAt) / 1000;
 }
 
@@ -928,6 +1194,8 @@ function updateHUD() {
   streakVal.textContent = state.streak;
   multVal.textContent   = `${mult}×`;
   bestVal.textContent   = Math.max(state.score, state.bestScore);
+  // NEW: update bestCombo display in HUD
+  if (bestComboValEl) bestComboValEl.textContent = state.bestCombo;
   const pct = Math.min(getSongTime() / SONG_DURATION * 100, 100);
   progressFill.style.width = pct + '%';
 }
@@ -979,6 +1247,14 @@ function triggerHit(note) {
   state.streak++;
   state.totalHits++;
   if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+
+  // ══════════════════════════════════════════════
+  // NEW: Update bestCombo whenever current streak exceeds it
+  // ══════════════════════════════════════════════
+  if (state.streak > state.bestCombo) {
+    state.bestCombo = state.streak;
+  }
+
   const mult = getMultiplier();
   if (mult > state.maxMult) state.maxMult = mult;
   const bonus = note.isDrumBreak ? 3 : 1;
@@ -1001,6 +1277,12 @@ function fireUnlock(combo) {
   state.unlockFired = true;
   sessionStorage.setItem('gj_unlocked', '3');
   playSound('unlock');
+  // ══════════════════════════════════════════════
+  // NEW: Pause game before showing the unlock popup
+  // Prevents player from losing combo while the modal is open
+  // ══════════════════════════════════════════════
+  pauseGame();
+  pauseModalOpen = true;
   showUnlockModal(combo);
 }
 
@@ -1026,9 +1308,149 @@ function showUnlockModal(combo) {
   }
 }
 
+// ══════════════════════════════════════════════
+// NEW: Pause / Resume functions
+// ══════════════════════════════════════════════
+
+/**
+ * Pauses the game loop and audio.
+ * Can be called from pause menu (X key) or from fireUnlock (popup protection).
+ */
+function pauseGame() {
+  if (!state.running || isPaused) return;
+  isPaused = true;
+  pausedAt  = performance.now();
+  cancelAnimationFrame(rafId);
+  if (usingSongFile && !songAudio.paused) songAudio.pause();
+}
+
+/**
+ * Resumes the game after showing a 3-2-1-GO countdown.
+ * Adjusts the song clock to account for paused duration.
+ */
+function resumeAfterCountdown() {
+  showResumeCountdown(() => {
+    // Shift the song start reference by how long we were paused
+    const pausedDuration = performance.now() - pausedAt;
+    state.songStartedAt += pausedDuration;
+
+    if (usingSongFile) {
+      songAudio.play().then(() => {
+        // Re-sync using actual audio position (most accurate)
+        state.songStartedAt = performance.now() - songAudio.currentTime * 1000;
+      }).catch(() => {});
+    }
+
+    isPaused = false;
+    lastFrameTime = performance.now();
+    rafId = requestAnimationFrame(gameLoop);
+  });
+}
+
+/**
+ * Shows 3-2-1-GO countdown overlay, then calls callback.
+ */
+function showResumeCountdown(callback) {
+  const overlay = document.getElementById('resumeCountdown');
+  const numEl   = document.getElementById('resumeCountdownNum');
+  const sequence = ['3', '2', '1', 'GO!'];
+  let i = 0;
+
+  overlay.style.opacity = '1';
+  overlay.style.pointerEvents = 'all';
+  numEl.textContent = sequence[0];
+
+  function tick() {
+    i++;
+    if (i >= sequence.length) {
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      callback();
+      return;
+    }
+    numEl.textContent = sequence[i];
+    // Re-trigger CSS animation
+    numEl.style.animation = 'none';
+    void numEl.offsetWidth;
+    numEl.style.animation = 'countPop .8s ease-out';
+    const delay = sequence[i] === 'GO!' ? 600 : 800;
+    setTimeout(tick, delay);
+  }
+  setTimeout(tick, 800);
+}
+
+// ══════════════════════════════════════════════
+// NEW: Pause menu show/hide
+// ══════════════════════════════════════════════
+
+function openPauseMenu() {
+  if (!state.running && !isPaused) return; // only pause while in game
+  pauseGame();
+  // Update best combo display in pause menu
+  const bestDisplay = document.getElementById('pauseBestComboDisplay');
+  if (bestDisplay) bestDisplay.textContent = `BEST COMBO: ${state.bestCombo}`;
+  // Update score for submit
+  if (window.lbUpdatePauseScore) window.lbUpdatePauseScore(state.bestCombo);
+  // Reset the inline submit form
+  resetPauseSubmitForm();
+  document.getElementById('pauseMenu').classList.remove('hidden');
+}
+
+function closePauseMenu() {
+  document.getElementById('pauseMenu').classList.add('hidden');
+  document.getElementById('pauseSubmitArea').classList.remove('show');
+}
+
+function resetPauseSubmitForm() {
+  const input  = document.getElementById('pauseUsernameInput');
+  const btn    = document.getElementById('pauseSubmitScoreBtn');
+  const status = document.getElementById('pauseSubmitStatus');
+  if (input)  { input.disabled = false; input.value = ''; }
+  if (btn)    { btn.disabled = false; btn.textContent = 'SUBMIT'; }
+  if (status) { status.textContent = ''; status.className = 'lb-submit-status'; }
+}
+
+// Pause menu button: Resume
+document.getElementById('pauseResumeBtn').addEventListener('click', () => {
+  closePauseMenu();
+  resumeAfterCountdown();
+});
+
+// Pause menu button: Submit Score
+document.getElementById('pauseSubmitBtn').addEventListener('click', () => {
+  const area = document.getElementById('pauseSubmitArea');
+  const scoreEl = document.getElementById('pauseScoreDisplay');
+  if (scoreEl) scoreEl.textContent = state.bestCombo;
+  if (window.lbUpdatePauseScore) window.lbUpdatePauseScore(state.bestCombo);
+  area.classList.toggle('show');
+});
+
+// Pause menu button: Exit Game
+document.getElementById('pauseExitBtn').addEventListener('click', () => {
+  closePauseMenu();
+  quitToStart();
+});
+
 const KEY_MAP = { d:0, f:1, j:2, k:3 };
+
 document.addEventListener('keydown', e => {
-  if (!state.running) return;
+  // ══════════════════════════════════════════════
+  // NEW: X key toggles pause menu
+  // ══════════════════════════════════════════════
+  if (e.key.toLowerCase() === 'x' && state.running) {
+    e.preventDefault();
+    const pauseMenu = document.getElementById('pauseMenu');
+    if (!pauseMenu.classList.contains('hidden')) {
+      // Pause menu is open — resume
+      closePauseMenu();
+      if (isPaused && !pauseModalOpen) resumeAfterCountdown();
+    } else if (!isPaused) {
+      openPauseMenu();
+    }
+    return;
+  }
+
+  if (!state.running || isPaused) return;
   ensureAudio();
   const lane = KEY_MAP[e.key.toLowerCase()];
   if (lane === undefined) return;
@@ -1057,7 +1479,7 @@ document.addEventListener('keydown', e => {
 });
 
 function gameLoop(timestamp) {
-  if (!state.running) return;
+  if (!state.running || isPaused) return;
   const dt = Math.min((timestamp - lastFrameTime) / 1000, .05);
   lastFrameTime = timestamp;
   const laneHeight = laneEls[0].offsetHeight;
@@ -1102,17 +1524,27 @@ function startGame() {
   const hitLineTop = laneHeight - CONFIG.HIT_LINE_BOTTOM;
   const travelPx   = hitLineTop + CONFIG.NOTE_HEIGHT;
   state.travelTime = (travelPx / CONFIG.NOTE_SPEED) * 1000;
+
+  // ══════════════════════════════════════════════
+  // Reset all state including NEW bestCombo
+  // ══════════════════════════════════════════════
   Object.assign(state, {
     running: false, score: 0, streak: 0, bestStreak: 0, maxMult: 1,
+    bestCombo: 0,   // NEW: reset bestCombo on each new game
     totalHits: 0, notes: [], unlockFired: false, songNoteIdx: 0,
     drumAlertFired: false,
   });
+
+  // Reset pause state
+  isPaused       = false;
+  pauseModalOpen = false;
+
   updateHUD();
   startScreen.classList.add('hidden');
   gameOverScreen.classList.add('hidden');
-  // Hide leaderboard on new game
-  document.getElementById('lbOverlay').classList.remove('visible');
+  document.getElementById('pauseMenu').classList.add('hidden');
   progressFill.style.width = '0%';
+
   runCountdown(() => {
     state.running = true;
     const START_OFFSET = 170.0;
@@ -1127,7 +1559,7 @@ function startGame() {
       songAudio.play().then(() => {
         state.songStartedAt = performance.now() - songAudio.currentTime * 1000;
       }).catch(() => { state.songStartedAt = performance.now(); });
-      songAudio.onended = () => { if (state.running) endGame(); };
+      songAudio.onended = () => { if (state.running && !isPaused) endGame(); };
     } else {
       state.songStartedAt = performance.now() - START_OFFSET * 1000;
     }
@@ -1138,6 +1570,7 @@ function startGame() {
 
 function stopGame() {
   state.running = false;
+  isPaused = false;
   cancelAnimationFrame(rafId);
   if (usingSongFile) { songAudio.pause(); songAudio.currentTime = 0; }
   state.notes.forEach(n => { try { n.el.remove(); } catch(e){} });
@@ -1146,21 +1579,30 @@ function stopGame() {
 
 function quitToStart() {
   stopGame();
+  isPaused = false;
+  pauseModalOpen = false;
   countdownEl.classList.remove('show');
+  document.getElementById('resumeCountdown').style.opacity = '0';
+  document.getElementById('resumeCountdown').style.pointerEvents = 'none';
   document.getElementById('streakModal').classList.remove('show');
   document.querySelectorAll('.modal-spark').forEach(s => s.remove());
-  document.getElementById('lbOverlay').classList.remove('visible');
+  document.getElementById('pauseMenu').classList.add('hidden');
   startScreen.classList.remove('hidden');
   gameOverScreen.classList.add('hidden');
 }
 
-/* ── PATCHED: endGame now calls lbShow with bestStreak ── */
 function endGame() {
   stopGame();
   if (state.score > state.bestScore) state.bestScore = state.score;
+
   finalScore.textContent  = state.score;
   finalStreak.textContent = state.bestStreak;
   finalMult.textContent   = `${state.maxMult}×`;
+
+  // NEW: show bestCombo in game over screen
+  const finalBestComboEl = document.getElementById('finalBestCombo');
+  if (finalBestComboEl) finalBestComboEl.textContent = state.bestCombo;
+
   if (state.unlockFired || state.bestStreak >= COMBO_REQUIRED) {
     unlockBadge.classList.add('visible');
     arcadeBtn.classList.add('highlighted');
@@ -1168,21 +1610,35 @@ function endGame() {
   }
   gameOverScreen.classList.remove('hidden');
 
-  // ── NEW: show leaderboard submit panel with bestStreak as the score ──
-  if (window.lbShow) window.lbShow(state.bestStreak);
+  // ══════════════════════════════════════════════
+  // NEW: Show leaderboard with bestCombo (not current combo)
+  // The submit panel and leaderboard table are embedded in the game over screen
+  // ══════════════════════════════════════════════
+  if (window.lbShow) window.lbShow(state.bestCombo);
 }
 
+// Button listeners
 startBtn.addEventListener('click',   startGame);
 restartBtn.addEventListener('click', startGame);
 arcadeBtn.addEventListener('click',  goToArcadeWithUnlock);
 inGameBackBtn.addEventListener('click', quitToStart);
+
+// Streak modal buttons
 document.getElementById('modalArcadeBtn').addEventListener('click', goToArcadeWithUnlock);
+
 document.getElementById('modalStayBtn').addEventListener('click', () => {
   document.getElementById('streakModal').classList.remove('show');
   document.querySelectorAll('.modal-spark').forEach(s => s.remove());
+  pauseModalOpen = false;
+  // ══════════════════════════════════════════════
+  // NEW: Resume with countdown instead of instantly
+  // This prevents combo loss from tiles that dropped during modal
+  // ══════════════════════════════════════════════
+  resumeAfterCountdown();
 });
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && state.running) quitToStart();
+  if (e.key === 'Escape' && state.running && !isPaused) quitToStart();
 });
 
 buildLanes();
