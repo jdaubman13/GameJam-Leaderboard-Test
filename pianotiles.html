@@ -432,6 +432,49 @@
     .lb-loading { padding: 18px; text-align: center; font-size: 11px; letter-spacing: 2px; color: rgba(42,245,184,0.4); animation: lbBlink 1s step-end infinite; }
     @keyframes lbBlink { 50% { opacity: 0.3; } }
 
+    /* ══════════════════════════════════════════════
+       NEW: Leaderboard drag-to-resize handle
+    ══════════════════════════════════════════════ */
+    .lb-drag-handle {
+      width: 100%;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: s-resize;
+      background: rgba(42,245,184,0.06);
+      border: 1px solid rgba(42,245,184,0.22);
+      border-radius: 6px 6px 0 0;
+      user-select: none;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      margin-bottom: -1px;
+      position: relative;
+      gap: 8px;
+    }
+    .lb-drag-handle:hover,
+    .lb-drag-handle.dragging {
+      background: rgba(42,245,184,0.15);
+      border-color: rgba(42,245,184,0.5);
+    }
+    .lb-drag-handle::before {
+      content: '↓  drag to hide  ↓';
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: rgba(42,245,184,0.5);
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+    .lb-drag-handle:hover::before,
+    .lb-drag-handle.dragging::before {
+      color: rgba(42,245,184,0.9);
+    }
+    /* When lb-section is collapsible, give it overflow */
+    #lbSection {
+      overflow: hidden;
+      /* default expanded — JS will control max-height on drag */
+    }
+
     /* Pause hint bar */
     #pauseHint {
       position: fixed;
@@ -496,7 +539,9 @@
        NEW: Leaderboard section embedded in game over screen
   ══════════════════════════════════════════════ -->
   <div class="lb-section" id="lbSection">
+    <!-- Drag handle — grab and drag up/down to resize leaderboard panel -->
     <div class="lb-divider"></div>
+    <div class="lb-drag-handle" id="lbDragHandle" title="Drag to resize"></div>
 
     <!-- Score submit panel -->
     <div class="lb-submit-panel" id="lbSubmitPanel">
@@ -1615,6 +1660,7 @@ function endGame() {
   // The submit panel and leaderboard table are embedded in the game over screen
   // ══════════════════════════════════════════════
   if (window.lbShow) window.lbShow(state.bestCombo);
+  if (window._lbResetSheet) window._lbResetSheet();
 }
 
 // Button listeners
@@ -1642,6 +1688,93 @@ document.addEventListener('keydown', e => {
 });
 
 buildLanes();
+
+// ══════════════════════════════════════════════
+// Leaderboard bottom-sheet drag
+// Drag DOWN  → slides leaderboard off screen (see full game-over)
+// Drag UP    → brings it back
+// ══════════════════════════════════════════════
+(function () {
+  const handle = document.getElementById('lbDragHandle');
+  const sheet  = document.getElementById('lbSection');
+  if (!handle || !sheet) return;
+
+  // Give the sheet the CSS it needs to slide smoothly
+  sheet.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1)';
+  sheet.style.willChange = 'transform';
+  sheet.style.overflow   = 'visible'; // content visible when expanded
+
+  let active = false, startY = 0, startTY = 0, currentTY = 0;
+  let open = true; // starts visible
+
+  function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+
+  function setTY(ty, animate) {
+    currentTY = ty;
+    sheet.style.transition = animate
+      ? 'transform 0.35s cubic-bezier(0.4,0,0.2,1)'
+      : 'none';
+    sheet.style.transform = `translateY(${ty}px)`;
+  }
+
+  function onStart(e) {
+    active   = true;
+    startY   = getY(e);
+    startTY  = currentTY;
+    sheet.style.transition = 'none';
+    handle.classList.add('dragging');
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onMove(e) {
+    if (!active) return;
+    const delta = getY(e) - startY;          // positive = dragging down
+    const ty    = Math.max(0, startTY + delta); // can't go above origin
+    setTY(ty, false);
+    e.preventDefault();
+  }
+
+  function onEnd() {
+    if (!active) return;
+    active = false;
+    handle.classList.remove('dragging');
+    const sheetH = sheet.getBoundingClientRect().height || 300;
+    // Snap: if dragged more than 35% of panel height → close; else snap open
+    if (currentTY > sheetH * 0.35) {
+      setTY(sheetH + 40, true); // slide fully off screen
+      open = false;
+      handle.title        = 'Drag up to show leaderboard';
+      handle.style.borderRadius = '6px'; // standalone pill when collapsed
+    } else {
+      setTY(0, true); // snap back open
+      open = true;
+      handle.title = 'Drag down to hide leaderboard';
+      handle.style.borderRadius = '';
+    }
+  }
+
+  handle.addEventListener('mousedown',  onStart);
+  handle.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove',  onMove);
+  document.addEventListener('touchmove',  onMove, { passive: false });
+  document.addEventListener('mouseup',  onEnd);
+  document.addEventListener('touchend', onEnd);
+
+  // Also allow tapping the handle when closed to re-open
+  handle.addEventListener('click', () => {
+    if (!open) { setTY(0, true); open = true; handle.title = 'Drag down to hide leaderboard'; handle.style.borderRadius = ''; }
+  });
+
+  // Reset when a new game-over triggers
+  window._lbResetSheet = function () {
+    currentTY = 0;
+    open = true;
+    sheet.style.transform = '';
+    handle.style.borderRadius = '';
+    handle.title = 'Drag down to hide leaderboard';
+  };
+})();
 </script>
 </body>
 </html>
