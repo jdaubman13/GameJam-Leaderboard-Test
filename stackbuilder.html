@@ -250,7 +250,6 @@
     to   { transform: translateY(0);     opacity: 1; }
   }
 
-  /* ── Streak unlock pop-up modal ── */
   #streakModal {
     display: none;
     position: fixed; inset: 0;
@@ -342,23 +341,19 @@
     50%     { transform: translate(var(--sx),var(--sy)) scale(1.5); opacity: 0.5; }
   }
 
-  /* ══════════════════════════════════════════════
-     LEADERBOARD STYLES (new)
-  ══════════════════════════════════════════════ */
   #leaderboardSection {
     width: 420px;
     margin-top: 24px;
     font-family: 'Share Tech Mono', monospace;
   }
 
-  /* Score submission panel */
   .lb-submit-panel {
     background: rgba(0,255,200,0.06);
     border: 1px solid rgba(0,255,200,0.25);
     border-radius: 8px;
     padding: 16px 20px;
     margin-bottom: 16px;
-    display: none; /* shown after game over */
+    display: none;
   }
   .lb-submit-panel.visible { display: block; }
 
@@ -439,7 +434,6 @@
   .lb-submit-status.ok    { color: #39ff14; }
   .lb-submit-status.error { color: #f52a7c; }
 
-  /* Leaderboard table */
   .lb-panel {
     background: rgba(0,0,0,0.55);
     border: 1px solid rgba(0,255,200,0.18);
@@ -547,13 +541,51 @@
     animation: lbBlink 1s step-end infinite;
   }
   @keyframes lbBlink { 50% { opacity: 0.3; } }
+
+    /* ══════════════════════════════════════════════
+       Leaderboard drag-to-resize handle (stackbuilder)
+    ══════════════════════════════════════════════ */
+    #lbDragHandle {
+      width: 100%;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: s-resize;
+      background: rgba(0,255,200,0.06);
+      border: 1px solid rgba(0,255,200,0.22);
+      border-radius: 6px 6px 0 0;
+      user-select: none;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      margin-bottom: -1px;
+      box-sizing: border-box;
+    }
+    #lbDragHandle:hover, #lbDragHandle.dragging {
+      background: rgba(0,255,200,0.15);
+      border-color: rgba(0,255,200,0.5);
+    }
+    #lbDragHandle::before {
+      content: '\2193  drag to hide  \2193';
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: rgba(0,255,200,0.5);
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    #lbDragHandle:hover::before, #lbDragHandle.dragging::before {
+      color: rgba(0,255,200,0.9);
+    }
+    #leaderboardSection {
+      overflow: visible;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform;
+    }
+
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     GAME SECTION (unchanged)
-═══════════════════════════════════════════ -->
 <div style="display:flex; flex-direction:column; align-items:center; padding-top:20px;">
 
 <div id="gameWrapper">
@@ -620,12 +652,9 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     LEADERBOARD SECTION (new)
-═══════════════════════════════════════════ -->
+<div id="lbDragHandle" title="Drag to resize leaderboard"></div>
 <div id="leaderboardSection">
 
-  <!-- Score submission form — shown after game over -->
   <div class="lb-submit-panel" id="lbSubmitPanel">
     <div class="lb-submit-title">📊 Submit Your Score</div>
     <div class="lb-score-display" id="lbScoreDisplay">0</div>
@@ -645,7 +674,6 @@
     <div class="lb-submit-status" id="lbSubmitStatus"></div>
   </div>
 
-  <!-- Leaderboard table -->
   <div class="lb-panel">
     <div class="lb-header">
       <div class="lb-title">🏆 Highest Stack</div>
@@ -657,9 +685,8 @@
   </div>
 
 </div>
-</div><!-- end flex column -->
+</div>
 
-<!-- ── Streak unlock pop-up ── -->
 <div id="streakModal">
   <div class="modal-box" id="modalBox">
     <div class="modal-icon">🏗️</div>
@@ -675,24 +702,13 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     FIREBASE SDK (new) — Leaderboard backend
-     Project: groupjam-arcade (free Spark plan)
-═══════════════════════════════════════════ -->
 <script type="module">
-  /* ─────────────────────────────────────────────────────────────────
-     LEADERBOARD MODULE
-     Uses Firebase Firestore (free Spark tier).
-     Collection: "leaderboard_stack"
-     Documents auto-id, fields: { username, score, timestamp }
-  ───────────────────────────────────────────────────────────────── */
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
   import {
     getFirestore, collection, addDoc, query,
     orderBy, limit, getDocs, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-  // ── Firebase config ── REPLACE with your own project values ──
   const firebaseConfig = {
     apiKey: "AIzaSyAFE1i-ziXh1Z9FRVOgI_8EG-set2Oy2vA",
     authDomain: "groupjam-arcade.firebaseapp.com",
@@ -700,15 +716,14 @@
     storageBucket: "groupjam-arcade.firebasestorage.app",
     messagingSenderId: "633215767657",
     appId: "1:633215767657:web:6617a23a5a32850ca93ef8"
-};
+  };
 
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  const COLLECTION = "leaderboard_stack";  // Firestore collection name
-  const TOP_N      = 10;                   // number of entries to show
+  const COLLECTION = "leaderboard_stack";
+  const TOP_N      = 10;
 
-  /* Fetch top-N scores and render the table */
   async function loadLeaderboard() {
     const container = document.getElementById('lbTableContainer');
     container.innerHTML = '<div class="lb-loading">LOADING...</div>';
@@ -726,7 +741,6 @@
     }
   }
 
-  /* Render an array of { username, score } into the table */
   function renderTable(rows) {
     const container = document.getElementById('lbTableContainer');
     if (!rows.length) {
@@ -742,7 +756,6 @@
     rows.forEach((row, i) => {
       const rClass = rankClasses[i] || 'normal';
       const rLabel = i < 3 ? rankSymbols[i] : `#${i+1}`;
-      // Highlight the row if it matches last submitted name (stored in window)
       const nameClass = (row.username === window._lbLastSubmittedName) ? ' highlight' : '';
       html += `
         <div class="lb-row">
@@ -754,12 +767,10 @@
     container.innerHTML = html;
   }
 
-  /* Simple XSS guard */
   function sanitize(str) {
     return String(str).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  /* Submit a score to Firestore */
   async function submitScore(username, score) {
     await addDoc(collection(db, COLLECTION), {
       username: username.trim().toUpperCase().slice(0, 12),
@@ -768,7 +779,6 @@
     });
   }
 
-  /* ── Wire up UI ── */
   document.getElementById('lbRefreshBtn').addEventListener('click', loadLeaderboard);
 
   document.getElementById('lbSubmitBtn').addEventListener('click', async () => {
@@ -778,7 +788,6 @@
     const name   = input.value.trim();
     if (!name) { status.textContent = 'ENTER A USERNAME FIRST'; status.className = 'lb-submit-status error'; return; }
 
-    // Score is set by the game via window._lbPendingScore
     const score = window._lbPendingScore || 0;
     btn.disabled = true;
     status.textContent = 'SUBMITTING...';
@@ -790,7 +799,7 @@
       status.className   = 'lb-submit-status ok';
       btn.textContent    = '✓ DONE';
       input.disabled     = true;
-      await loadLeaderboard(); // refresh table immediately
+      await loadLeaderboard();
     } catch (e) {
       status.textContent = 'SUBMIT FAILED — CHECK CONNECTION';
       status.className   = 'lb-submit-status error';
@@ -799,10 +808,8 @@
     }
   });
 
-  /* Expose leaderboard loader globally so game code can call it */
   window.lbLoad  = loadLeaderboard;
   window.lbShow  = function(score) {
-    // Show the submit panel with the player's height score
     window._lbPendingScore = score;
     const panel = document.getElementById('lbSubmitPanel');
     const input = document.getElementById('lbUsernameInput');
@@ -814,17 +821,12 @@
     btn.disabled    = false;
     btn.textContent = 'SUBMIT';
     status.textContent = '';
-    // Scroll leaderboard into view
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 400);
   };
 
-  // Load on page init
   loadLeaderboard();
 </script>
 
-<!-- ═══════════════════════════════════════════
-     GAME SCRIPT (original — only triggerGameOver patched)
-═══════════════════════════════════════════ -->
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -909,7 +911,6 @@ function newGame() {
   screenShake = 0;
   lastPlacedWidth = BASE_BLOCK_W;
   unlockFired = false;
-  // Hide leaderboard submit panel on new game
   document.getElementById('lbSubmitPanel').classList.remove('visible');
   blocks.push(makePlatform());
   spawnMovingBlock();
@@ -1077,7 +1078,6 @@ function scrollCamera() {
   cameraTween = targetCam;
 }
 
-/* ── PATCHED: triggerGameOver now also calls lbShow with towerHeight ── */
 function triggerGameOver() {
   state = 'dead';
   movingBlock = null;
@@ -1106,8 +1106,8 @@ function triggerGameOver() {
 
     screenOverlay.classList.remove('hidden');
 
-    // ── NEW: show leaderboard submit panel with towerHeight as the score ──
     if (window.lbShow) window.lbShow(towerHeight);
+    if (window._sbResetSheet) window._sbResetSheet();
   }, 600);
 }
 
@@ -1460,6 +1460,85 @@ document.getElementById('modalStayBtn').addEventListener('click', () => {
 
 initScene();
 requestAnimationFrame(loop);
+</script>
+<script>
+// ══════════════════════════════════════════════
+// Leaderboard bottom-sheet drag (stackbuilder)
+// Drag DOWN  → slides leaderboard off screen
+// Drag UP    → brings it back / re-open tap
+// ══════════════════════════════════════════════
+(function () {
+  var handle = document.getElementById('lbDragHandle');
+  var sheet  = document.getElementById('leaderboardSection');
+  if (!handle || !sheet) return;
+
+  var active = false, startY = 0, startTY = 0, currentTY = 0, open = true;
+
+  function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+
+  function setTY(ty, animate) {
+    currentTY = ty;
+    sheet.style.transition = animate
+      ? 'transform 0.35s cubic-bezier(0.4,0,0.2,1)'
+      : 'none';
+    sheet.style.transform = 'translateY(' + ty + 'px)';
+  }
+
+  function onStart(e) {
+    if (!open && e.type !== 'click') return; // tapping handle re-opens
+    active  = true;
+    startY  = getY(e);
+    startTY = currentTY;
+    sheet.style.transition = 'none';
+    handle.classList.add('dragging');
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  function onMove(e) {
+    if (!active) return;
+    var delta = getY(e) - startY;               // positive = dragging down
+    var ty    = Math.max(0, startTY + delta);   // can't go above top
+    setTY(ty, false);
+    e.preventDefault();
+  }
+  function onEnd() {
+    if (!active) return;
+    active = false;
+    handle.classList.remove('dragging');
+    var sheetH = sheet.getBoundingClientRect().height || 300;
+    if (currentTY > sheetH * 0.35) {
+      setTY(sheetH + 40, true);   // snap fully off screen
+      open = false;
+      handle.style.borderRadius = '6px';
+      handle.title = 'Tap or drag up to show leaderboard';
+    } else {
+      setTY(0, true);             // snap back open
+      open = true;
+      handle.style.borderRadius = '';
+      handle.title = 'Drag down to hide leaderboard';
+    }
+  }
+
+  handle.addEventListener('mousedown',  onStart);
+  handle.addEventListener('touchstart', onStart, {passive:false});
+  document.addEventListener('mousemove',  onMove);
+  document.addEventListener('touchmove',  onMove, {passive:false});
+  document.addEventListener('mouseup',  onEnd);
+  document.addEventListener('touchend', onEnd);
+
+  // Tap handle to re-open when closed
+  handle.addEventListener('click', function() {
+    if (!open) { setTY(0, true); open = true; handle.style.borderRadius = ''; handle.title = 'Drag down to hide leaderboard'; }
+  });
+
+  // Reset when lbShow is called (new game over)
+  window._sbResetSheet = function() {
+    currentTY = 0; open = true;
+    sheet.style.transform = '';
+    handle.style.borderRadius = '';
+    handle.title = 'Drag down to hide leaderboard';
+  };
+})();
 </script>
 </body>
 </html>
